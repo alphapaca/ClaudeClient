@@ -17,4 +17,9 @@ data class MessageRequest(
 data class Message(
     val role: String,
     val content: String
-)
+) {
+    companion object {
+        const val ROLE_ASSISTANT = "assistant"
+        const val ROLE_USER = "user"
+    }
+}

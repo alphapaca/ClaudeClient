@@ -8,13 +8,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.github.alphapaca.claudeclient.data.api.Message
+import com.github.alphapaca.claudeclient.presentation.weather.FancyWeatherWidget
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 
 @Composable
 fun ChatScreen(modifier: Modifier) {
     val viewModel = koinViewModel<ChatViewModel>()
-    val messages by viewModel.messages.collectAsState()
+    val chatItems by viewModel.chatItems.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
@@ -27,8 +28,15 @@ fun ChatScreen(modifier: Modifier) {
                 .weight(1f)
                 .padding(16.dp)
         ) {
-            items(messages) { message ->
-                MessageBubble(message)
+            items(chatItems) { chatItem ->
+                when (chatItem) {
+                    is ChatItem.Text -> MessageBubble(chatItem.message)
+                    is ChatItem.Weather -> FancyWeatherWidget(chatItem.weatherData)
+                    is ChatItem.Suggest -> SuggestionChip(
+                        onClick = { viewModel.onSuggestClick(chatItem) },
+                        label = { Text(chatItem.label) }
+                    )
+                }
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
@@ -66,7 +74,7 @@ fun ChatScreen(modifier: Modifier) {
             Button(
                 onClick = {
                     if (inputText.isNotBlank()) {
-                        viewModel.sendMessage(inputText)
+                        viewModel.sendUserMessage(inputText)
                         inputText = ""
                     }
                 },
@@ -79,7 +87,7 @@ fun ChatScreen(modifier: Modifier) {
 }
 
 @Composable
-fun MessageBubble(message: Message) {
+private fun MessageBubble(message: Message) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -101,3 +109,8 @@ fun MessageBubble(message: Message) {
         }
     }
 }
+
+private val ChatItem.Suggest.label: String
+    get() = when (this) {
+        ChatItem.Suggest.ShowWeatherInRandomCity -> "Weather in random city"
+    }

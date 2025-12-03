@@ -19,14 +19,10 @@ object ClaudeApiClientFactory {
     private const val BASE_URL = "https://api.anthropic.com/"
     private const val API_VERSION = "2023-06-01"
 
-    fun create(): HttpClient {
+    fun create(json: Json): HttpClient {
         return HttpClient(OkHttp) {
             install(ContentNegotiation) {
-                json(Json {
-                    prettyPrint = true
-                    isLenient = true
-                    ignoreUnknownKeys = true
-                })
+                json(json)
             }
 
             install(Logging) {
