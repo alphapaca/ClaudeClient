@@ -58,7 +58,7 @@ class ChatViewModel(
                           "lowTemperature": number
                         }
 
-                        Get weather for: ${cities.random()}`
+                        Get weather for: ${cities.random()}
                     """.trimIndent()
                 ) { assistantMessage ->
                     try {
