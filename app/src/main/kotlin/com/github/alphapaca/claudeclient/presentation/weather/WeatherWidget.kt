@@ -1,14 +1,50 @@
 package com.github.alphapaca.claudeclient.presentation.weather
 
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.EaseOutQuart
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.AcUnit
+import androidx.compose.material.icons.filled.Air
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Opacity
+import androidx.compose.material.icons.filled.Thermostat
+import androidx.compose.material.icons.filled.Thunderstorm
+import androidx.compose.material.icons.filled.Water
+import androidx.compose.material.icons.filled.WbCloudy
+import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,9 +61,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.sin
-import kotlin.math.cos
+import com.github.alphapaca.claudeclient.domain.model.ConversationItem.WeatherData
 import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 // Data classes
 @Composable
@@ -131,7 +168,7 @@ fun FancyWeatherWidget(
 }
 
 @Composable
-fun WeatherBackground(condition: WeatherCondition) {
+fun WeatherBackground(condition: WeatherData.Condition) {
     val infiniteTransition = rememberInfiniteTransition(label = "background")
 
     val animatedOffset by infiniteTransition.animateFloat(
@@ -145,37 +182,37 @@ fun WeatherBackground(condition: WeatherCondition) {
     )
 
     val colors = when (condition) {
-        WeatherCondition.SUNNY -> listOf(
+        WeatherData.Condition.SUNNY -> listOf(
             Color(0xFFFDB813),
             Color(0xFFF37335),
             Color(0xFFEF4E7B)
         )
-        WeatherCondition.CLOUDY -> listOf(
+        WeatherData.Condition.CLOUDY -> listOf(
             Color(0xFF696E79),
             Color(0xFFA4B0BD),
             Color(0xFF57606F)
         )
-        WeatherCondition.RAINY -> listOf(
+        WeatherData.Condition.RAINY -> listOf(
             Color(0xFF4A69BD),
             Color(0xFF6A89CC),
             Color(0xFF1E3799)
         )
-        WeatherCondition.STORMY -> listOf(
+        WeatherData.Condition.STORMY -> listOf(
             Color(0xFF2C3A47),
             Color(0xFF485460),
             Color(0xFF1B262C)
         )
-        WeatherCondition.SNOWY -> listOf(
+        WeatherData.Condition.SNOWY -> listOf(
             Color(0xFF8FBDD3),
             Color(0xFFB8E6F6),
             Color(0xFF5DA7C0)
         )
-        WeatherCondition.FOGGY -> listOf(
+        WeatherData.Condition.FOGGY -> listOf(
             Color(0xFF9CA3AF),
             Color(0xFFD1D5DB),
             Color(0xFF6B7280)
         )
-        WeatherCondition.PARTLY_CLOUDY -> listOf(
+        WeatherData.Condition.PARTLY_CLOUDY -> listOf(
             Color(0xFF74B9FF),
             Color(0xFF0984E3),
             Color(0xFFFECB2E)
@@ -197,12 +234,12 @@ fun WeatherBackground(condition: WeatherCondition) {
         // Animated particles/effects based on weather
         Canvas(modifier = Modifier.fillMaxSize()) {
             when (condition) {
-                WeatherCondition.SUNNY -> drawSunRays(animatedOffset)
-                WeatherCondition.RAINY -> drawRainDrops(animatedOffset)
-                WeatherCondition.SNOWY -> drawSnowflakes(animatedOffset)
-                WeatherCondition.CLOUDY, WeatherCondition.PARTLY_CLOUDY -> drawClouds(animatedOffset)
-                WeatherCondition.STORMY -> drawLightning(animatedOffset)
-                WeatherCondition.FOGGY -> drawFog(animatedOffset)
+                WeatherData.Condition.SUNNY -> drawSunRays(animatedOffset)
+                WeatherData.Condition.RAINY -> drawRainDrops(animatedOffset)
+                WeatherData.Condition.SNOWY -> drawSnowflakes(animatedOffset)
+                WeatherData.Condition.CLOUDY, WeatherData.Condition.PARTLY_CLOUDY -> drawClouds(animatedOffset)
+                WeatherData.Condition.STORMY -> drawLightning(animatedOffset)
+                WeatherData.Condition.FOGGY -> drawFog(animatedOffset)
             }
         }
     }
@@ -328,12 +365,12 @@ fun AnimatedTemperature(temperature: Int, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun AnimatedWeatherIcon(condition: WeatherCondition, modifier: Modifier = Modifier) {
+fun AnimatedWeatherIcon(condition: WeatherData.Condition, modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition(label = "icon")
 
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
-        targetValue = if (condition == WeatherCondition.SUNNY) 360f else 0f,
+        targetValue = if (condition == WeatherData.Condition.SUNNY) 360f else 0f,
         animationSpec = infiniteRepeatable(
             animation = tween(20000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
@@ -352,13 +389,13 @@ fun AnimatedWeatherIcon(condition: WeatherCondition, modifier: Modifier = Modifi
     )
 
     val icon = when (condition) {
-        WeatherCondition.SUNNY -> Icons.Default.WbSunny
-        WeatherCondition.CLOUDY -> Icons.Default.Cloud
-        WeatherCondition.RAINY -> Icons.Default.Opacity
-        WeatherCondition.STORMY -> Icons.Default.Thunderstorm
-        WeatherCondition.SNOWY -> Icons.Default.AcUnit
-        WeatherCondition.FOGGY -> Icons.Default.Cloud
-        WeatherCondition.PARTLY_CLOUDY -> Icons.Default.WbCloudy
+        WeatherData.Condition.SUNNY -> Icons.Default.WbSunny
+        WeatherData.Condition.CLOUDY -> Icons.Default.Cloud
+        WeatherData.Condition.RAINY -> Icons.Default.Opacity
+        WeatherData.Condition.STORMY -> Icons.Default.Thunderstorm
+        WeatherData.Condition.SNOWY -> Icons.Default.AcUnit
+        WeatherData.Condition.FOGGY -> Icons.Default.Cloud
+        WeatherData.Condition.PARTLY_CLOUDY -> Icons.Default.WbCloudy
     }
 
     Icon(
@@ -495,12 +532,12 @@ fun TemperatureBar(high: Int, low: Int, current: Int) {
 }
 
 // Extension function for display names
-fun WeatherCondition.displayName(): String = when (this) {
-    WeatherCondition.SUNNY -> "Sunny"
-    WeatherCondition.CLOUDY -> "Cloudy"
-    WeatherCondition.RAINY -> "Rainy"
-    WeatherCondition.STORMY -> "Stormy"
-    WeatherCondition.SNOWY -> "Snowy"
-    WeatherCondition.FOGGY -> "Foggy"
-    WeatherCondition.PARTLY_CLOUDY -> "Partly Cloudy"
+fun WeatherData.Condition.displayName(): String = when (this) {
+    WeatherData.Condition.SUNNY -> "Sunny"
+    WeatherData.Condition.CLOUDY -> "Cloudy"
+    WeatherData.Condition.RAINY -> "Rainy"
+    WeatherData.Condition.STORMY -> "Stormy"
+    WeatherData.Condition.SNOWY -> "Snowy"
+    WeatherData.Condition.FOGGY -> "Foggy"
+    WeatherData.Condition.PARTLY_CLOUDY -> "Partly Cloudy"
 }

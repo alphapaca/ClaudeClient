@@ -1,13 +1,32 @@
 package com.github.alphapaca.claudeclient.presentation.chat
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.github.alphapaca.claudeclient.data.api.Message
+import com.github.alphapaca.claudeclient.domain.model.ConversationItem
 import com.github.alphapaca.claudeclient.presentation.weather.FancyWeatherWidget
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
@@ -15,7 +34,7 @@ import java.util.Locale
 @Composable
 fun ChatScreen(modifier: Modifier) {
     val viewModel = koinViewModel<ChatViewModel>()
-    val chatItems by viewModel.chatItems.collectAsState()
+    val chatItems by viewModel.chatItems.collectAsState(emptyList())
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
@@ -30,8 +49,10 @@ fun ChatScreen(modifier: Modifier) {
         ) {
             items(chatItems) { chatItem ->
                 when (chatItem) {
-                    is ChatItem.Text -> MessageBubble(chatItem.message)
-                    is ChatItem.Weather -> FancyWeatherWidget(chatItem.weatherData)
+                    is ChatItem.Conversation -> when(chatItem.item) {
+                        is ConversationItem.Text -> MessageBubble(chatItem.item)
+                        is ConversationItem.WeatherData -> FancyWeatherWidget(chatItem.item)
+                    }
                     is ChatItem.Suggest -> SuggestionChip(
                         onClick = { viewModel.onSuggestClick(chatItem) },
                         label = { Text(chatItem.label) }
@@ -74,7 +95,7 @@ fun ChatScreen(modifier: Modifier) {
             Button(
                 onClick = {
                     if (inputText.isNotBlank()) {
-                        viewModel.sendUserMessage(inputText)
+                        viewModel.sendMessage(inputText)
                         inputText = ""
                     }
                 },
@@ -87,11 +108,11 @@ fun ChatScreen(modifier: Modifier) {
 }
 
 @Composable
-private fun MessageBubble(message: Message) {
+private fun MessageBubble(message: ConversationItem.Text) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (message.role == "user")
+            containerColor = if (message.role == ConversationItem.Text.Role.USER)
                 MaterialTheme.colorScheme.primaryContainer
             else
                 MaterialTheme.colorScheme.secondaryContainer
@@ -99,7 +120,7 @@ private fun MessageBubble(message: Message) {
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
-                text = message.role.capitalize(Locale.ROOT),
+                text = message.role.name.lowercase().capitalize(Locale.ROOT),
                 style = MaterialTheme.typography.labelSmall
             )
             Text(
@@ -112,5 +133,5 @@ private fun MessageBubble(message: Message) {
 
 private val ChatItem.Suggest.label: String
     get() = when (this) {
-        ChatItem.Suggest.ShowWeatherInRandomCity -> "Weather in random city"
+        ChatItem.Suggest.GetWeather -> "Get weather"
     }

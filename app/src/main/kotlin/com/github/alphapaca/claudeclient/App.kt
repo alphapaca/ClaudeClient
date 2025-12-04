@@ -1,7 +1,7 @@
 package com.github.alphapaca.claudeclient
 
 import android.app.Application
-import com.github.alphapaca.claudeclient.di.claudeModule
+import com.github.alphapaca.claudeclient.di.chatModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
@@ -10,7 +10,7 @@ class App : Application() {
         super.onCreate()
         startKoin {
             androidContext(this@App)
-            modules(claudeModule)
+            modules(chatModule)
         }
     }
 }

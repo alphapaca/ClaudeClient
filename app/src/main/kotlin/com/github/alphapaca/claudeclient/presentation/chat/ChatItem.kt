@@ -1,18 +1,10 @@
 package com.github.alphapaca.claudeclient.presentation.chat
 
-import com.github.alphapaca.claudeclient.data.api.Message
-import com.github.alphapaca.claudeclient.presentation.weather.WeatherData
+import com.github.alphapaca.claudeclient.domain.model.ConversationItem
 
 sealed interface ChatItem {
-    sealed interface Conversation : ChatItem
-    data class Text(
-        val message: Message,
-    ) : Conversation
-    data class Weather(
-        val weatherData: WeatherData,
-    ) : Conversation
-
-    enum class Suggest : ChatItem {
-        ShowWeatherInRandomCity
+    class Conversation(val item: ConversationItem) : ChatItem
+    sealed interface Suggest : ChatItem {
+        data object GetWeather : Suggest
     }
 }
