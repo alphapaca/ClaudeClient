@@ -13,6 +13,10 @@ sealed interface ConversationItem {
         }
     }
 
+    data class Composed(
+        val parts: List<ConversationItem>,
+    ) : ConversationItem
+
     @Serializable
     sealed interface Widget : ConversationItem
 
@@ -32,4 +36,15 @@ sealed interface ConversationItem {
             SUNNY, CLOUDY, RAINY, STORMY, SNOWY, FOGGY, PARTLY_CLOUDY
         }
     }
+
+    @Serializable
+    @SerialName("bike")
+    data class BikeData(
+        val bikeType: String,
+        val explanation: String,
+        val keyFeatures: List<String>,
+        val exampleModel: String,
+        val examplePrice: String,
+        val productUrl: String,
+    ) : Widget
 }

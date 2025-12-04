@@ -3,6 +3,7 @@ package com.github.alphapaca.claudeclient.di
 import com.github.alphapaca.claudeclient.data.api.ClaudeApiClientFactory
 import com.github.alphapaca.claudeclient.data.mapper.ConversationApiMapper
 import com.github.alphapaca.claudeclient.data.repository.ConversationRepository
+import com.github.alphapaca.claudeclient.domain.usecase.GetABikeUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetConversationUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetWeatherUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SendMessageUseCase
@@ -26,5 +27,6 @@ val chatModule = module {
     factory { GetWeatherUseCase(get()) }
     factory { SendMessageUseCase(get()) }
     factory { GetConversationUseCase(get()) }
-    viewModel<ChatViewModel> { ChatViewModel(get(), get(), get()) }
+    factory { GetABikeUseCase(get()) }
+    viewModel<ChatViewModel> { ChatViewModel(get(), get(), get(), get()) }
 }

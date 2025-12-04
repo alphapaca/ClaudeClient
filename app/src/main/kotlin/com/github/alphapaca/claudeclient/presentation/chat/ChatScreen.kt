@@ -1,6 +1,8 @@
 package com.github.alphapaca.claudeclient.presentation.chat
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,7 +29,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.github.alphapaca.claudeclient.domain.model.ConversationItem
-import com.github.alphapaca.claudeclient.presentation.weather.FancyWeatherWidget
+import com.github.alphapaca.claudeclient.presentation.widgets.BikeRecommendationCard
+import com.github.alphapaca.claudeclient.presentation.widgets.FancyWeatherWidget
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 
@@ -49,14 +52,15 @@ fun ChatScreen(modifier: Modifier) {
         ) {
             items(chatItems) { chatItem ->
                 when (chatItem) {
-                    is ChatItem.Conversation -> when(chatItem.item) {
-                        is ConversationItem.Text -> MessageBubble(chatItem.item)
-                        is ConversationItem.WeatherData -> FancyWeatherWidget(chatItem.item)
+                    is ChatItem.Conversation -> ConversationItemWidget(chatItem.item)
+                    is ChatItem.SuggestGroup -> FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        chatItem.suggests.forEach { suggest ->
+                            SuggestionChip(
+                                onClick = { viewModel.onSuggestClick(suggest) },
+                                label = { Text(suggest.label) }
+                            )
+                        }
                     }
-                    is ChatItem.Suggest -> SuggestionChip(
-                        onClick = { viewModel.onSuggestClick(chatItem) },
-                        label = { Text(chatItem.label) }
-                    )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -108,6 +112,16 @@ fun ChatScreen(modifier: Modifier) {
 }
 
 @Composable
+private fun ConversationItemWidget(item: ConversationItem) {
+    when(item) {
+        is ConversationItem.Text -> MessageBubble(item)
+        is ConversationItem.WeatherData -> FancyWeatherWidget(item)
+        is ConversationItem.BikeData -> BikeRecommendationCard(item)
+        is ConversationItem.Composed -> item.parts.forEach { ConversationItemWidget(it) }
+    }
+}
+
+@Composable
 private fun MessageBubble(message: ConversationItem.Text) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -134,4 +148,5 @@ private fun MessageBubble(message: ConversationItem.Text) {
 private val ChatItem.Suggest.label: String
     get() = when (this) {
         ChatItem.Suggest.GetWeather -> "Get weather"
+        ChatItem.Suggest.GetABike -> "Get a bike"
     }

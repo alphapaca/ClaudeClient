@@ -2,6 +2,7 @@ package com.github.alphapaca.claudeclient.presentation.chat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.alphapaca.claudeclient.domain.usecase.GetABikeUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetConversationUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetWeatherUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SendMessageUseCase
@@ -16,6 +17,7 @@ import kotlinx.coroutines.plus
 class ChatViewModel(
     private val sendMessageUseCase: SendMessageUseCase,
     private val getWeatherUseCase: GetWeatherUseCase,
+    private val getABikeUseCase: GetABikeUseCase,
     getConversationUseCase: GetConversationUseCase,
 ) : ViewModel() {
     private val errorHandlingScope = viewModelScope + CoroutineExceptionHandler { _, exception ->
@@ -34,7 +36,7 @@ class ChatViewModel(
         isLoading,
     ) { conversationItems, isLoading ->
         val mapped = conversationItems.map { ChatItem.Conversation(it) }
-        if (isLoading) mapped else mapped + ChatItem.Suggest.GetWeather
+        if (isLoading) mapped else mapped + suggests
     }
 
     fun sendMessage(userMessage: String) {
@@ -45,9 +47,8 @@ class ChatViewModel(
 
     fun onSuggestClick(suggest: ChatItem.Suggest) {
         when (suggest) {
-            ChatItem.Suggest.GetWeather -> {
-                launchWithLoading { getWeatherUseCase() }
-            }
+            ChatItem.Suggest.GetWeather -> launchWithLoading { getWeatherUseCase() }
+            ChatItem.Suggest.GetABike -> launchWithLoading { getABikeUseCase() }
         }
     }
 
@@ -58,5 +59,14 @@ class ChatViewModel(
             block()
             _isLoading.value = false
         }
+    }
+
+    private companion object {
+        private val suggests = ChatItem.SuggestGroup(
+            listOf(
+                ChatItem.Suggest.GetWeather,
+                ChatItem.Suggest.GetABike,
+            )
+        )
     }
 }

@@ -1,4 +1,4 @@
-package com.github.alphapaca.claudeclient.presentation.weather
+package com.github.alphapaca.claudeclient.presentation.widgets
 
 import androidx.compose.animation.core.EaseOutQuart
 import androidx.compose.animation.core.FastOutSlowInEasing

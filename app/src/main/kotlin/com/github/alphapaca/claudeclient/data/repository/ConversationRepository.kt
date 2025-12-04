@@ -23,7 +23,7 @@ class ConversationRepository(
     suspend fun sendMessage(message: String) {
         conversation.value += ConversationItem.Text(ConversationItem.Text.Role.USER, message)
         val request = MessageRequest(
-            model = "claude-sonnet-4-20250514",
+            model = "claude-sonnet-4-5",
             maxTokens = 1024,
             messages = conversation.value.map { mapper.toApiMessage(it) }
         )
