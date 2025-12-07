@@ -34,7 +34,7 @@ fun BikeRecommendationCard(
             .padding(vertical = 4.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -46,7 +46,7 @@ fun BikeRecommendationCard(
                 text = bikeData.bikeType,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = MaterialTheme.colorScheme.onSecondaryContainer
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -55,7 +55,7 @@ fun BikeRecommendationCard(
             Text(
                 text = bikeData.explanation,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = MaterialTheme.colorScheme.onSecondaryContainer
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -65,7 +65,7 @@ fun BikeRecommendationCard(
                 text = "Key Features:",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = MaterialTheme.colorScheme.onSecondaryContainer
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -78,13 +78,13 @@ fun BikeRecommendationCard(
                     Text(
                         text = "•",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                         modifier = Modifier.padding(end = 8.dp)
                     )
                     Text(
                         text = feature,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 }
             }
@@ -101,13 +101,13 @@ fun BikeRecommendationCard(
                     Text(
                         text = "Recommended:",
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
                     )
                     Text(
                         text = bikeData.exampleModel,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 }
 

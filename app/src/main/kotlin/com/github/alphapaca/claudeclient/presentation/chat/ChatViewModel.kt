@@ -1,5 +1,6 @@
 package com.github.alphapaca.claudeclient.presentation.chat
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.alphapaca.claudeclient.domain.usecase.GetABikeUseCase
@@ -22,6 +23,7 @@ class ChatViewModel(
 ) : ViewModel() {
     private val errorHandlingScope = viewModelScope + CoroutineExceptionHandler { _, exception ->
         _error.value = exception.message ?: "Unknown error occurred"
+        Log.e("ChatViewModel", "error occured", exception)
         _isLoading.value = false
     }
 

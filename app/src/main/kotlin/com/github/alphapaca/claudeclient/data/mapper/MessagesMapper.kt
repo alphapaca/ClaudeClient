@@ -11,31 +11,25 @@ class ConversationApiMapper(
 ) {
     fun toConversationItem(response: MessageResponse): ConversationItem? {
         return response.content.firstOrNull()?.text?.let<String, ConversationItem?> { assistantMessage ->
-            runCatching {
-                json.decodeFromString<ConversationItem.Widget>(assistantMessage.removeJsonBlockWrappings())
-            }
-                .getOrElse {
-                    val parts: List<ConversationItem> = assistantMessage.split("```json\n", "\n```")
-                        .mapIndexed { index, part ->
-                            if (index % 2 == 0) {
-                                ConversationItem.Text(ConversationItem.Text.Role.ASSISTANT, part)
-                            } else {
-                                runCatching {
-                                    json.decodeFromString<ConversationItem.Widget>(part)
-                                }
-                                    .getOrElse { e ->
-                                        Log.e("ConversationApiMapper", "failed to parse json", e)
-                                        Log.d("ConversationApiMapper", part)
-                                        ConversationItem.Text(
-                                            ConversationItem.Text.Role.ASSISTANT,
-                                            part
-                                        )
-                                    }
+            val parts: List<ConversationItem> = assistantMessage.splitByCodeTags()
+                .mapIndexed { index, part ->
+                    runCatching {
+                        json.decodeFromString<ConversationItem.Widget>(part)
+                    }
+                        .getOrElse { e ->
+                            val partTrimmed = part.trim()
+                            if (partTrimmed.startsWith("{") && partTrimmed.endsWith("}")) {
+                                Log.e("ConversationApiMapper", "failed to parse json", e)
+                                Log.d("ConversationApiMapper", part)
                             }
+                            ConversationItem.Text(
+                                ConversationItem.Text.Role.ASSISTANT,
+                                partTrimmed
+                            )
                         }
-                        .filterNot { part -> part is ConversationItem.Text && part.content.isBlank() }
-                    if (parts.count() == 1) parts.first() else ConversationItem.Composed(parts)
                 }
+                .filterNot { part -> part is ConversationItem.Text && part.content.isBlank() }
+            if (parts.count() == 1) parts.first() else ConversationItem.Composed(parts)
         }
     }
 
@@ -68,8 +62,22 @@ class ConversationApiMapper(
         }
     }
 
-    private fun String.removeJsonBlockWrappings(): String {
-        return this.removeSurrounding(prefix = "```json\n", suffix = "\n```")
+    private fun String.splitByCodeTags(): List<String> {
+        val lines = split("\n")
+        return buildList {
+            var currentBlockLines = mutableListOf<String>()
+            lines.forEach { line ->
+                if (line.startsWith("```")) {
+                    add(currentBlockLines.joinToString("\n"))
+                    currentBlockLines = mutableListOf()
+                } else {
+                    currentBlockLines += line
+                }
+            }
+            if (currentBlockLines.isNotEmpty()) {
+                add(currentBlockLines.joinToString("\n"))
+            }
+        }
     }
 
     private companion object {
