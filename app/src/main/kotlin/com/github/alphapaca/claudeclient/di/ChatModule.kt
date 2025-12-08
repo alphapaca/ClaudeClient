@@ -41,6 +41,6 @@ val chatModule = module {
     factory { SettingsRepository(get<Context>().dataStore) }
     factory { SetSystemPromptUseCase(get()) }
     factory { GetSystemPromptUseCase(get()) }
-    viewModel<ChatViewModel> { ChatViewModel(get(), get(), get(), get()) }
+    viewModel<ChatViewModel> { ChatViewModel(get(), get(), get(), get(), get()) }
     viewModel<SettingsViewModel> { SettingsViewModel(get(), get()) }
 }

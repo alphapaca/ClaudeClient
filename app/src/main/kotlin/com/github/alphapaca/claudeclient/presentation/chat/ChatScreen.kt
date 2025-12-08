@@ -48,6 +48,7 @@ fun ChatScreen(
 ) {
     val viewModel = koinViewModel<ChatViewModel>()
     val chatItems by viewModel.chatItems.collectAsState(emptyList())
+    val tokensUsed by viewModel.tokensUsed.collectAsState(0)
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
@@ -55,7 +56,16 @@ fun ChatScreen(
 
     Column(modifier = modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text("Claude Chat") },
+            title = {
+                Column {
+                    Text("Claude Chat")
+                    Text(
+                        text = "Tokens used: $tokensUsed",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
             actions = {
                 IconButton(onClick = onSettingsClick) {
                     Icon(Icons.Default.Settings, contentDescription = "Settings")
@@ -71,7 +81,9 @@ fun ChatScreen(
             items(chatItems) { chatItem ->
                 when (chatItem) {
                     is ChatItem.Conversation -> ConversationItemWidget(chatItem.item)
-                    is ChatItem.SuggestGroup -> FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    is ChatItem.SuggestGroup -> FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         chatItem.suggests.forEach { suggest ->
                             SuggestionChip(
                                 onClick = { viewModel.onSuggestClick(suggest) },
@@ -131,7 +143,7 @@ fun ChatScreen(
 
 @Composable
 private fun ConversationItemWidget(item: ConversationItem) {
-    when(item) {
+    when (item) {
         is ConversationItem.Text -> MessageBubble(item)
         is ConversationItem.WeatherData -> FancyWeatherWidget(item)
         is ConversationItem.BikeData -> BikeRecommendationCard(item)
@@ -167,4 +179,5 @@ private val ChatItem.Suggest.label: String
     get() = when (this) {
         ChatItem.Suggest.GetWeather -> "Get weather"
         ChatItem.Suggest.GetABike -> "Get a bike"
+        ChatItem.Suggest.GetABikeSystemPrompt -> "Get a bike with system prompt"
     }

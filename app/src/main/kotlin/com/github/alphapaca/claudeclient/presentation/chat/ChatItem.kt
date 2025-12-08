@@ -8,6 +8,6 @@ sealed interface ChatItem {
     class SuggestGroup(val suggests: List<Suggest>) : ChatItem
 
     enum class Suggest {
-        GetWeather, GetABike
+        GetWeather, GetABike, GetABikeSystemPrompt
     }
 }
