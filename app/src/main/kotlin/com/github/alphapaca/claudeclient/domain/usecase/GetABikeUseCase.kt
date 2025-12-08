@@ -1,12 +1,10 @@
 package com.github.alphapaca.claudeclient.domain.usecase
 
-import com.github.alphapaca.claudeclient.data.repository.ConversationRepository
-
 class GetABikeUseCase(
-    private val repository: ConversationRepository,
+    private val sendMessageUseCase: SendMessageUseCase,
 ) {
     suspend operator fun invoke() {
-        repository.sendMessage(
+        sendMessageUseCase(
             """
                 You are a Bike shop consultant, ask user for his preferences in several steps and at the end
                 recommend the most suitable type of bike with providing a specific example. Be specific and helpful.

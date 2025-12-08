@@ -1,5 +1,5 @@
 import java.io.FileInputStream
-import java.util.*
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -73,6 +73,12 @@ dependencies {
     // Koin
     implementation(libs.koin.androidx.compose)
     implementation(libs.koin.core)
+
+    implementation(libs.androidx.datastore.preferences)
+
+    // Navigation 3
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

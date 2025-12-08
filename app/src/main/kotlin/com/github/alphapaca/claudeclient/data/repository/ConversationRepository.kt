@@ -20,12 +20,13 @@ class ConversationRepository(
 
     fun getConversation(): Flow<List<ConversationItem>> = conversation.asSharedFlow()
 
-    suspend fun sendMessage(message: String) {
+    suspend fun sendMessage(message: String, systemPrompt: String) {
         conversation.value += ConversationItem.Text(ConversationItem.Text.Role.USER, message)
         val request = MessageRequest(
             model = "claude-sonnet-4-5",
             maxTokens = 1024,
-            messages = conversation.value.map { mapper.toApiMessage(it) }
+            messages = conversation.value.map { mapper.toApiMessage(it) },
+            system = systemPrompt.takeIf(String::isNotBlank),
         )
         val response = sendMessageToServer(request)
         conversation.value += listOfNotNull(mapper.toConversationItem(response))
