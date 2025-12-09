@@ -57,7 +57,7 @@ fun SettingsScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(
-                value = temperature.toString(),
+                value = temperature?.toString().orEmpty(),
                 onValueChange = viewModel::onTemperatureChange,
                 label = { Text("Temperature [0-1]") },
                 modifier = Modifier.fillMaxWidth(),

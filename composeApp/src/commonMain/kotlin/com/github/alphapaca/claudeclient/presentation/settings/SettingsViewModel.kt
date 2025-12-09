@@ -20,8 +20,8 @@ class SettingsViewModel(
     private val _systemPrompt = MutableStateFlow("")
     val systemPrompt: StateFlow<String> = _systemPrompt
 
-    private val _temperature = MutableStateFlow<Double?>(null)
-    val temperature: StateFlow<Double?> = _temperature
+    private val _temperature = MutableStateFlow("")
+    val temperature: StateFlow<String> = _temperature
 
     init {
         loadSettings()
@@ -30,7 +30,7 @@ class SettingsViewModel(
     private fun loadSettings() {
         viewModelScope.launch {
             _systemPrompt.value = getSystemPromptUseCase()
-            _temperature.value = getTemperatureUseCase()
+            _temperature.value = getTemperatureUseCase()?.toString().orEmpty()
         }
     }
 
@@ -39,14 +39,14 @@ class SettingsViewModel(
     }
 
     fun onTemperatureChange(newTemperature: String) {
-        _temperature.value = newTemperature.toDoubleOrNull()
+        _temperature.value = newTemperature
     }
 
     fun saveSystemPrompt() {
         viewModelScope.launch {
-            _temperature.value = _temperature.value?.coerceIn(0.0, 1.0)
             setSystemPromptUseCase(_systemPrompt.value)
-            setTemperatureUseCase(_temperature.value)
+            setTemperatureUseCase( _temperature.value.toDoubleOrNull()?.coerceIn(0.0, 1.0))
+            _temperature.value = getTemperatureUseCase()?.toString().orEmpty()
         }
     }
 }
