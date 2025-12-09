@@ -57,14 +57,17 @@ fun SettingsScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(
-                value = temperature?.toString().orEmpty(),
+                value = temperature,
                 onValueChange = viewModel::onTemperatureChange,
                 label = { Text("Temperature [0-1]") },
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(modifier = Modifier.height(16.dp))
             Button(
-                onClick = viewModel::saveSystemPrompt,
+                onClick = {
+                    viewModel.saveSettings()
+                    onBackClick()
+                },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("Save")

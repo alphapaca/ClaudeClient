@@ -4,7 +4,9 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 
 class SettingsRepository(
@@ -24,6 +26,10 @@ class SettingsRepository(
 
     suspend fun getTemperature(): Double? {
         return dataStore.data.first().toPreferences()[temperatureKey]
+    }
+
+    fun getTemperatureFlow(): Flow<Double?> {
+        return dataStore.data.map { it[temperatureKey] }
     }
 
     suspend fun setTemperature(temperature: Double?) {

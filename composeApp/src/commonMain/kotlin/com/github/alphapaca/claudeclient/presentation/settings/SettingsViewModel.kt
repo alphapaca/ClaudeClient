@@ -42,7 +42,7 @@ class SettingsViewModel(
         _temperature.value = newTemperature
     }
 
-    fun saveSystemPrompt() {
+    fun saveSettings() {
         viewModelScope.launch {
             setSystemPromptUseCase(_systemPrompt.value)
             setTemperatureUseCase( _temperature.value.toDoubleOrNull()?.coerceIn(0.0, 1.0))

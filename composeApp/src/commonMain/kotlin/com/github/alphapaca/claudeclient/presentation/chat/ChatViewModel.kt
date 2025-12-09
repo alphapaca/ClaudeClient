@@ -3,8 +3,10 @@ package com.github.alphapaca.claudeclient.presentation.chat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import com.github.alphapaca.claudeclient.domain.usecase.ClearConversationUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetABikeUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetConversationUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.GetTemperatureFlowUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetWeatherUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SendMessageUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetSystemPromptUseCase
@@ -22,7 +24,9 @@ class ChatViewModel(
     private val getWeatherUseCase: GetWeatherUseCase,
     private val getABikeUseCase: GetABikeUseCase,
     private val setSystemPromptUseCase: SetSystemPromptUseCase,
+    private val clearConversationUseCase: ClearConversationUseCase,
     getConversationUseCase: GetConversationUseCase,
+    getTemperatureFlowUseCase: GetTemperatureFlowUseCase,
 ) : ViewModel() {
     private val errorHandlingScope = viewModelScope + CoroutineExceptionHandler { _, exception ->
         _error.value = exception.message ?: "Unknown error occurred"
@@ -46,6 +50,8 @@ class ChatViewModel(
 
     val tokensUsed: Flow<Int> = getConversationUseCase()
         .map { conversation -> conversation.inputTokensUsed + conversation.outputTokensUsed }
+
+    val temperature: Flow<Double?> = getTemperatureFlowUseCase()
 
     fun sendMessage(userMessage: String) {
         launchWithLoading {
@@ -78,6 +84,11 @@ class ChatViewModel(
                 sendMessage("Can you help me choose a bike?")
             }
         }
+    }
+
+    fun clearMessages() {
+        clearConversationUseCase()
+        _error.value = null
     }
 
     private fun launchWithLoading(block: suspend () -> Unit) {

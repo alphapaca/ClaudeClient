@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -33,6 +34,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.unit.dp
 import com.github.alphapaca.claudeclient.domain.model.ConversationItem
 import com.github.alphapaca.claudeclient.presentation.widgets.BikeRecommendationCard
@@ -49,6 +53,7 @@ fun ChatScreen(
     val viewModel = koinViewModel<ChatViewModel>()
     val chatItems by viewModel.chatItems.collectAsState(emptyList())
     val tokensUsed by viewModel.tokensUsed.collectAsState(0)
+    val temperature by viewModel.temperature.collectAsState(null)
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
@@ -59,14 +64,18 @@ fun ChatScreen(
             title = {
                 Column {
                     Text("Claude Chat")
+                    val temperatureText = temperature?.let { "%.1f".format(it) } ?: "default"
                     Text(
-                        text = "Tokens used: $tokensUsed",
+                        text = "Tokens: $tokensUsed | Temp: $temperatureText",
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             },
             actions = {
+                IconButton(onClick = { viewModel.clearMessages() }) {
+                    Icon(Icons.Default.Delete, contentDescription = "Clear messages")
+                }
                 IconButton(onClick = onSettingsClick) {
                     Icon(Icons.Default.Settings, contentDescription = "Settings")
                 }
@@ -120,7 +129,16 @@ fun ChatScreen(
             OutlinedTextField(
                 value = inputText,
                 onValueChange = { inputText = it },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f)
+                    .onKeyEvent { keyEvent ->
+                        if (keyEvent.key == Key.Enter && inputText.isNotBlank()) {
+                            viewModel.sendMessage(inputText)
+                            inputText = ""
+                            true
+                        } else {
+                            false
+                        }
+                    },
                 placeholder = { Text("Type a message...") }
             )
 

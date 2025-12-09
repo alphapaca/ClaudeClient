@@ -4,9 +4,11 @@ import com.github.alphapaca.claudeclient.data.api.ClaudeApiClientFactory
 import com.github.alphapaca.claudeclient.data.mapper.ConversationApiMapper
 import com.github.alphapaca.claudeclient.data.repository.ConversationRepository
 import com.github.alphapaca.claudeclient.data.repository.SettingsRepository
+import com.github.alphapaca.claudeclient.domain.usecase.ClearConversationUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetABikeUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetConversationUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetSystemPromptUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.GetTemperatureFlowUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetTemperatureUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetWeatherUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SendMessageUseCase
@@ -33,12 +35,14 @@ val appModule = module {
     factory { GetWeatherUseCase(get()) }
     factory { SendMessageUseCase(get(), get()) }
     factory { GetConversationUseCase(get()) }
+    factory { ClearConversationUseCase(get()) }
     factory { GetABikeUseCase(get()) }
     factory { SettingsRepository(get()) }
     factory { SetSystemPromptUseCase(get()) }
     factory { GetSystemPromptUseCase(get()) }
     factory { SetTemperatureUseCase(get()) }
     factory { GetTemperatureUseCase(get()) }
-    viewModel<ChatViewModel> { ChatViewModel(get(), get(), get(), get(), get()) }
+    factory { GetTemperatureFlowUseCase(get()) }
+    viewModel<ChatViewModel> { ChatViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel<SettingsViewModel> { SettingsViewModel(get(), get(), get(), get()) }
 }

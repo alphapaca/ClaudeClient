@@ -46,4 +46,8 @@ class ConversationRepository(
         }.body()
         return response
     }
+
+    fun clearConversation() {
+        conversation.value = Conversation(emptyList(), 0, 0)
+    }
 }
