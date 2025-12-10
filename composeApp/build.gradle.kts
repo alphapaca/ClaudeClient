@@ -81,6 +81,7 @@ buildConfig {
         load(FileInputStream(rootProject.file("local.properties")))
     }
     buildConfigField("ANTHROPIC_API_KEY", localProperties["ANTHROPIC_API_KEY"] as String)
+    buildConfigField("DEEPSEEK_API_KEY", localProperties["DEEPSEEK_API_KEY"] as String)
 }
 
 android {

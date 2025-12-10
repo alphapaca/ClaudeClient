@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.github.alphapaca.claudeclient.domain.model.LLMModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -12,6 +13,18 @@ import kotlinx.coroutines.flow.map
 class SettingsRepository(
     private val dataStore: DataStore<Preferences>,
 ) {
+    suspend fun getModel(): LLMModel {
+        val apiName = dataStore.data.first().toPreferences()[modelKey] ?: LLMModel.DEFAULT.apiName
+        return LLMModel.fromApiName(apiName)
+    }
+
+    suspend fun setModel(model: LLMModel) {
+        dataStore.updateData {
+            it.toMutablePreferences().also { preferences ->
+                preferences[modelKey] = model.apiName
+            }
+        }
+    }
     suspend fun getSystemPrompt(): String {
         return dataStore.data.first().toPreferences()[systemPromptKey].orEmpty()
     }
@@ -47,5 +60,6 @@ class SettingsRepository(
     private companion object {
         val systemPromptKey = stringPreferencesKey("system_prompt")
         val temperatureKey = doublePreferencesKey("temperature")
+        val modelKey = stringPreferencesKey("model")
     }
 }

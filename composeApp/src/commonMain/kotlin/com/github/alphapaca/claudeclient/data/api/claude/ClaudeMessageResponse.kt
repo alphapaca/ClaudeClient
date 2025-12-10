@@ -1,28 +1,28 @@
-package com.github.alphapaca.claudeclient.data.api
+package com.github.alphapaca.claudeclient.data.api.claude
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class MessageResponse(
+data class ClaudeMessageResponse(
     val id: String,
     val type: String,
     val role: String,
-    val content: List<ContentBlock>,
+    val content: List<ClaudeContentBlock>,
     val model: String,
     @SerialName("stop_reason")
     val stopReason: String? = null,
-    val usage: Usage
+    val usage: ClaudeUsage
 )
 
 @Serializable
-data class ContentBlock(
+data class ClaudeContentBlock(
     val type: String,
     val text: String
 )
 
 @Serializable
-data class Usage(
+data class ClaudeUsage(
     @SerialName("input_tokens")
     val inputTokens: Int,
     @SerialName("output_tokens")

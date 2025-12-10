@@ -42,7 +42,6 @@ import com.github.alphapaca.claudeclient.domain.model.ConversationItem
 import com.github.alphapaca.claudeclient.presentation.widgets.BikeRecommendationCard
 import com.github.alphapaca.claudeclient.presentation.widgets.FancyWeatherWidget
 import org.koin.compose.viewmodel.koinViewModel
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,6 +52,7 @@ fun ChatScreen(
     val viewModel = koinViewModel<ChatViewModel>()
     val chatItems by viewModel.chatItems.collectAsState(emptyList())
     val tokensUsed by viewModel.tokensUsed.collectAsState(0)
+    val totalCost by viewModel.totalCost.collectAsState(0.0)
     val temperature by viewModel.temperature.collectAsState(null)
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
@@ -65,8 +65,9 @@ fun ChatScreen(
                 Column {
                     Text("Claude Chat")
                     val temperatureText = temperature?.let { "%.1f".format(it) } ?: "default"
+                    val costText = "%.4f".format(totalCost)
                     Text(
-                        text = "Tokens: $tokensUsed | Temp: $temperatureText",
+                        text = "Tokens: $tokensUsed | \$$costText | Temp: $temperatureText",
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -132,7 +133,7 @@ fun ChatScreen(
                 modifier = Modifier.weight(1f)
                     .onKeyEvent { keyEvent ->
                         if (keyEvent.key == Key.Enter && inputText.isNotBlank()) {
-                            viewModel.sendMessage(inputText)
+                            viewModel.sendMessage(inputText.trim())
                             inputText = ""
                             true
                         } else {
@@ -171,25 +172,53 @@ private fun ConversationItemWidget(item: ConversationItem) {
 
 @Composable
 private fun MessageBubble(message: ConversationItem.Text) {
+    val roleLabel = when (message) {
+        is ConversationItem.Text.Assistant -> message.model.displayName
+        is ConversationItem.Text.User -> "User"
+    }
+    val timeLabel = when (message) {
+        is ConversationItem.Text.Assistant -> formatInferenceTime(message.inferenceTimeMs)
+        is ConversationItem.Text.User -> null
+    }
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (message.role == ConversationItem.Text.Role.USER)
+            containerColor = if (message is ConversationItem.Text.User) {
                 MaterialTheme.colorScheme.primaryContainer
-            else
+            } else {
                 MaterialTheme.colorScheme.secondaryContainer
+            }
         )
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-                text = message.role.name.lowercase().capitalize(Locale.ROOT),
-                style = MaterialTheme.typography.labelSmall
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = roleLabel,
+                    style = MaterialTheme.typography.labelSmall
+                )
+                timeLabel?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
             Text(
                 text = message.content,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
+    }
+}
+
+private fun formatInferenceTime(timeMs: Long): String {
+    return when {
+        timeMs < 1000 -> "${timeMs}ms"
+        else -> "%.1fs".format(timeMs / 1000.0)
     }
 }
 

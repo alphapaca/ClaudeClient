@@ -49,7 +49,10 @@ class ChatViewModel(
     }
 
     val tokensUsed: Flow<Int> = getConversationUseCase()
-        .map { conversation -> conversation.inputTokensUsed + conversation.outputTokensUsed }
+        .map { conversation -> conversation.totalInputTokens + conversation.totalOutputTokens }
+
+    val totalCost: Flow<Double> = getConversationUseCase()
+        .map { conversation -> conversation.totalCost }
 
     val temperature: Flow<Double?> = getTemperatureFlowUseCase()
 

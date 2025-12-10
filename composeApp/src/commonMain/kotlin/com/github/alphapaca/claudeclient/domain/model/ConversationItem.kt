@@ -4,12 +4,18 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 sealed interface ConversationItem {
-    data class Text(
-        val role: Role,
-        val content: String,
-    ) : ConversationItem {
-        enum class Role {
-            ASSISTANT, USER
+    sealed interface Text : ConversationItem {
+        val content: String
+
+        data class User(override val content: String) : Text
+        data class Assistant(
+            override val content: String,
+            val model: LLMModel,
+            val inputTokens: Int,
+            val outputTokens: Int,
+            val inferenceTimeMs: Long,
+        ) : Text {
+            val cost: Double get() = model.calculateCost(inputTokens, outputTokens)
         }
     }
 

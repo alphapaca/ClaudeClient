@@ -1,53 +1,50 @@
 package com.github.alphapaca.claudeclient.data.repository
 
-import com.github.alphapaca.claudeclient.data.api.MessageRequest
-import com.github.alphapaca.claudeclient.data.api.MessageResponse
-import com.github.alphapaca.claudeclient.data.mapper.ConversationApiMapper
+import com.github.alphapaca.claudeclient.data.service.LLMService
 import com.github.alphapaca.claudeclient.domain.model.Conversation
 import com.github.alphapaca.claudeclient.domain.model.ConversationItem
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
+import com.github.alphapaca.claudeclient.domain.model.LLMModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlin.time.measureTimedValue
 
 class ConversationRepository(
-    private val client: HttpClient,
-    private val mapper: ConversationApiMapper,
+    private val llmServices: List<LLMService>,
 ) {
-    private val conversation: MutableStateFlow<Conversation> = MutableStateFlow(Conversation(emptyList(), 0, 0))
+    private val conversation: MutableStateFlow<Conversation> = MutableStateFlow(Conversation(emptyList()))
 
     fun getConversation(): Flow<Conversation> = conversation.asSharedFlow()
 
-    suspend fun sendMessage(message: String, systemPrompt: String, temperature: Double?) {
+    suspend fun sendMessage(message: String, model: LLMModel, systemPrompt: String, temperature: Double?) {
         conversation.value = conversation.value.copy(
-            items = conversation.value.items + ConversationItem.Text(ConversationItem.Text.Role.USER, message)
+            items = conversation.value.items + ConversationItem.Text.User(message)
         )
-        val request = MessageRequest(
-            model = "claude-sonnet-4-5",
-            maxTokens = 1024,
-            messages = conversation.value.items.map { mapper.toApiMessage(it) },
-            system = systemPrompt.takeIf(String::isNotBlank),
-            temperature = temperature,
-        )
-        val response = sendMessageToServer(request)
-        conversation.value = conversation.value.copy(
-            items = conversation.value.items + listOfNotNull(mapper.toConversationItem(response)),
-            inputTokensUsed = conversation.value.inputTokensUsed + response.usage.inputTokens,
-            outputTokensUsed = conversation.value.outputTokensUsed + response.usage.outputTokens,
-        )
-    }
 
-    private suspend fun sendMessageToServer(request: MessageRequest): MessageResponse {
-        val response: MessageResponse = client.post("v1/messages") {
-            setBody(request)
-        }.body()
-        return response
+        val service = llmServices.find { it.isServiceFor(model) }
+            ?: error("No LLM service found for model: ${model.displayName}")
+
+        val (response, duration) = measureTimedValue {
+            service.sendMessage(
+                messages = conversation.value.items,
+                model = model,
+                systemPrompt = systemPrompt.takeIf { it.isNotBlank() },
+                temperature = temperature,
+            )
+        }
+
+        conversation.value = conversation.value.copy(
+            items = conversation.value.items + ConversationItem.Text.Assistant(
+                content = response.content,
+                model = model,
+                inputTokens = response.inputTokens,
+                outputTokens = response.outputTokens,
+                inferenceTimeMs = duration.inWholeMilliseconds,
+            ),
+        )
     }
 
     fun clearConversation() {
-        conversation.value = Conversation(emptyList(), 0, 0)
+        conversation.value = Conversation(emptyList())
     }
 }

@@ -2,8 +2,11 @@ package com.github.alphapaca.claudeclient.presentation.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.alphapaca.claudeclient.domain.model.LLMModel
+import com.github.alphapaca.claudeclient.domain.usecase.GetModelUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetSystemPromptUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetTemperatureUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.SetModelUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetSystemPromptUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetTemperatureUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +18,8 @@ class SettingsViewModel(
     private val setSystemPromptUseCase: SetSystemPromptUseCase,
     private val getTemperatureUseCase: GetTemperatureUseCase,
     private val setTemperatureUseCase: SetTemperatureUseCase,
+    private val getModelUseCase: GetModelUseCase,
+    private val setModelUseCase: SetModelUseCase,
 ) : ViewModel() {
 
     private val _systemPrompt = MutableStateFlow("")
@@ -22,6 +27,9 @@ class SettingsViewModel(
 
     private val _temperature = MutableStateFlow("")
     val temperature: StateFlow<String> = _temperature
+
+    private val _selectedModel = MutableStateFlow(LLMModel.DEFAULT)
+    val selectedModel: StateFlow<LLMModel> = _selectedModel
 
     init {
         loadSettings()
@@ -31,6 +39,7 @@ class SettingsViewModel(
         viewModelScope.launch {
             _systemPrompt.value = getSystemPromptUseCase()
             _temperature.value = getTemperatureUseCase()?.toString().orEmpty()
+            _selectedModel.value = getModelUseCase()
         }
     }
 
@@ -42,10 +51,15 @@ class SettingsViewModel(
         _temperature.value = newTemperature
     }
 
+    fun onModelChange(model: LLMModel) {
+        _selectedModel.value = model
+    }
+
     fun saveSettings() {
         viewModelScope.launch {
             setSystemPromptUseCase(_systemPrompt.value)
-            setTemperatureUseCase( _temperature.value.toDoubleOrNull()?.coerceIn(0.0, 1.0))
+            setTemperatureUseCase(_temperature.value.toDoubleOrNull()?.coerceIn(0.0, 1.0))
+            setModelUseCase(_selectedModel.value)
             _temperature.value = getTemperatureUseCase()?.toString().orEmpty()
         }
     }

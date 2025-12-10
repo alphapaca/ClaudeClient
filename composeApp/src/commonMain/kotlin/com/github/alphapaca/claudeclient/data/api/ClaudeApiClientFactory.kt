@@ -14,13 +14,20 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import kotlin.time.Duration.Companion.seconds
 
 object ClaudeApiClientFactory {
     private const val BASE_URL = "https://api.anthropic.com/"
     private const val API_VERSION = "2023-06-01"
 
     fun create(json: Json): HttpClient {
-        return HttpClient(OkHttp) {
+        return HttpClient(OkHttp.create {
+            config {
+                callTimeout(300.seconds)
+                readTimeout(300.seconds)
+                writeTimeout(300.seconds)
+            }
+        }) {
             install(ContentNegotiation) {
                 json(json)
             }
@@ -32,8 +39,38 @@ object ClaudeApiClientFactory {
 
             defaultRequest {
                 url(BASE_URL)
+
                 header("x-api-key", BuildConfig.ANTHROPIC_API_KEY)
                 header("anthropic-version", API_VERSION)
+                contentType(ContentType.Application.Json)
+            }
+        }
+    }
+}
+
+object DeepSeekApiClientFactory {
+    private const val BASE_URL = "https://api.deepseek.com/"
+
+    fun create(json: Json): HttpClient {
+        return HttpClient(OkHttp.create {
+            config {
+                callTimeout(300.seconds)
+                readTimeout(300.seconds)
+                writeTimeout(300.seconds)
+            }
+        }) {
+            install(ContentNegotiation) {
+                json(json)
+            }
+
+            install(Logging) {
+                logger = Logger.ANDROID
+                level = LogLevel.BODY
+            }
+
+            defaultRequest {
+                url(BASE_URL)
+                header("Authorization", "Bearer ${BuildConfig.DEEPSEEK_API_KEY}")
                 contentType(ContentType.Application.Json)
             }
         }

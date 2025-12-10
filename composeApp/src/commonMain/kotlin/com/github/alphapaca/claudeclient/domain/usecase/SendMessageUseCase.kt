@@ -8,8 +8,9 @@ class SendMessageUseCase(
     private val settingsRepository: SettingsRepository,
 ) {
     suspend operator fun invoke(message: String) {
+        val model = settingsRepository.getModel()
         val systemPrompt = settingsRepository.getSystemPrompt()
         val temperature = settingsRepository.getTemperature()
-        return conversationRepository.sendMessage(message, systemPrompt, temperature)
+        return conversationRepository.sendMessage(message, model, systemPrompt, temperature)
     }
 }
