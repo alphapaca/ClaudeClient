@@ -5,6 +5,7 @@ import com.github.alphapaca.claudeclient.data.api.claude.ClaudeMessageRequest
 import com.github.alphapaca.claudeclient.data.api.claude.ClaudeMessageResponse
 import com.github.alphapaca.claudeclient.domain.model.ConversationItem
 import com.github.alphapaca.claudeclient.domain.model.LLMModel
+import com.github.alphapaca.claudeclient.domain.model.StopReason
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.post
@@ -25,10 +26,11 @@ class ClaudeService(
         model: LLMModel,
         systemPrompt: String?,
         temperature: Double?,
+        maxTokens: Int,
     ): LLMResponse {
         val request = ClaudeMessageRequest(
             model = model.apiName,
-            maxTokens = 1024,
+            maxTokens = maxTokens,
             messages = messages.map { it.toClaudeMessage() },
             system = systemPrompt?.takeIf { it.isNotBlank() },
             temperature = temperature,
@@ -42,6 +44,7 @@ class ClaudeService(
             content = response.content.firstOrNull()?.text.orEmpty(),
             inputTokens = response.usage.inputTokens,
             outputTokens = response.usage.outputTokens,
+            stopReason = StopReason.fromClaudeReason(response.stopReason),
         )
     }
 

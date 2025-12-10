@@ -5,6 +5,7 @@ import com.github.alphapaca.claudeclient.data.api.deepseek.DeepSeekMessageReques
 import com.github.alphapaca.claudeclient.data.api.deepseek.DeepSeekMessageResponse
 import com.github.alphapaca.claudeclient.domain.model.ConversationItem
 import com.github.alphapaca.claudeclient.domain.model.LLMModel
+import com.github.alphapaca.claudeclient.domain.model.StopReason
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.post
@@ -25,6 +26,7 @@ class DeepSeekService(
         model: LLMModel,
         systemPrompt: String?,
         temperature: Double?,
+        maxTokens: Int,
     ): LLMResponse {
         val systemMessages = systemPrompt
             ?.takeIf { it.isNotBlank() }
@@ -34,7 +36,7 @@ class DeepSeekService(
         val request = DeepSeekMessageRequest(
             model = model.apiName,
             messages = systemMessages + messages.map { it.toDeepSeekMessage() },
-            maxTokens = 1024,
+            maxTokens = maxTokens,
             // DeepSeek API temperature range is [0, 2], default 1.0
             // We normalize from [0, 1] to [0, 2] to match Claude's behavior
             // where 0 is least variability and 1 is most
@@ -50,6 +52,7 @@ class DeepSeekService(
             content = choice?.message?.content.orEmpty(),
             inputTokens = response.usage.promptTokens,
             outputTokens = response.usage.completionTokens,
+            stopReason = StopReason.fromDeepSeekReason(choice?.finishReason),
         )
     }
 

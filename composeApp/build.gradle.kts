@@ -65,6 +65,9 @@ kotlin {
 
             // logs
             implementation(libs.kermit)
+
+            // markdown
+            implementation(libs.markdown.renderer.m3)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

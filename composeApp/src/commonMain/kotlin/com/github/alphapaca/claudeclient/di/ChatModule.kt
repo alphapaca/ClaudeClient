@@ -10,12 +10,14 @@ import com.github.alphapaca.claudeclient.data.service.LLMService
 import com.github.alphapaca.claudeclient.domain.usecase.ClearConversationUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetABikeUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetConversationUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.GetMaxTokensUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetModelUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetSystemPromptUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetTemperatureFlowUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetTemperatureUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetWeatherUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SendMessageUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.SetMaxTokensUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetModelUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetSystemPromptUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetTemperatureUseCase
@@ -61,8 +63,10 @@ val appModule = module {
     factory { GetTemperatureFlowUseCase(get()) }
     factory { GetModelUseCase(get()) }
     factory { SetModelUseCase(get()) }
+    factory { GetMaxTokensUseCase(get()) }
+    factory { SetMaxTokensUseCase(get()) }
 
     // ViewModels
     viewModel<ChatViewModel> { ChatViewModel(get(), get(), get(), get(), get(), get(), get()) }
-    viewModel<SettingsViewModel> { SettingsViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel<SettingsViewModel> { SettingsViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
 }

@@ -2,11 +2,13 @@ package com.github.alphapaca.claudeclient.data.service
 
 import com.github.alphapaca.claudeclient.domain.model.ConversationItem
 import com.github.alphapaca.claudeclient.domain.model.LLMModel
+import com.github.alphapaca.claudeclient.domain.model.StopReason
 
 data class LLMResponse(
     val content: String,
     val inputTokens: Int,
     val outputTokens: Int,
+    val stopReason: StopReason,
 )
 
 interface LLMService {
@@ -17,5 +19,6 @@ interface LLMService {
         model: LLMModel,
         systemPrompt: String?,
         temperature: Double?,
+        maxTokens: Int,
     ): LLMResponse
 }

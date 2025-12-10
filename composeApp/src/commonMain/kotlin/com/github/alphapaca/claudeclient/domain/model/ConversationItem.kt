@@ -3,6 +3,33 @@ package com.github.alphapaca.claudeclient.domain.model
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+enum class StopReason {
+    END_TURN,
+    MAX_TOKENS,
+    STOP_SEQUENCE,
+    TOOL_USE,
+    CONTENT_FILTER,
+    UNKNOWN;
+
+    companion object {
+        fun fromClaudeReason(reason: String?): StopReason = when (reason) {
+            "end_turn" -> END_TURN
+            "max_tokens" -> MAX_TOKENS
+            "stop_sequence" -> STOP_SEQUENCE
+            "tool_use" -> TOOL_USE
+            else -> UNKNOWN
+        }
+
+        fun fromDeepSeekReason(reason: String?): StopReason = when (reason) {
+            "stop" -> END_TURN
+            "length" -> MAX_TOKENS
+            "content_filter" -> CONTENT_FILTER
+            "tool_calls" -> TOOL_USE
+            else -> UNKNOWN
+        }
+    }
+}
+
 sealed interface ConversationItem {
     sealed interface Text : ConversationItem {
         val content: String
@@ -14,6 +41,7 @@ sealed interface ConversationItem {
             val inputTokens: Int,
             val outputTokens: Int,
             val inferenceTimeMs: Long,
+            val stopReason: StopReason,
         ) : Text {
             val cost: Double get() = model.calculateCost(inputTokens, outputTokens)
         }

@@ -16,7 +16,7 @@ class ConversationRepository(
 
     fun getConversation(): Flow<Conversation> = conversation.asSharedFlow()
 
-    suspend fun sendMessage(message: String, model: LLMModel, systemPrompt: String, temperature: Double?) {
+    suspend fun sendMessage(message: String, model: LLMModel, systemPrompt: String, temperature: Double?, maxTokens: Int) {
         conversation.value = conversation.value.copy(
             items = conversation.value.items + ConversationItem.Text.User(message)
         )
@@ -30,6 +30,7 @@ class ConversationRepository(
                 model = model,
                 systemPrompt = systemPrompt.takeIf { it.isNotBlank() },
                 temperature = temperature,
+                maxTokens = maxTokens,
             )
         }
 
@@ -40,6 +41,7 @@ class ConversationRepository(
                 inputTokens = response.inputTokens,
                 outputTokens = response.outputTokens,
                 inferenceTimeMs = duration.inWholeMilliseconds,
+                stopReason = response.stopReason,
             ),
         )
     }

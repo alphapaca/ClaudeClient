@@ -3,6 +3,7 @@ package com.github.alphapaca.claudeclient.data.repository
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.doublePreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.github.alphapaca.claudeclient.domain.model.LLMModel
 import kotlinx.coroutines.flow.Flow
@@ -57,9 +58,23 @@ class SettingsRepository(
         }
     }
 
+    suspend fun getMaxTokens(): Int {
+        return dataStore.data.first().toPreferences()[maxTokensKey] ?: DEFAULT_MAX_TOKENS
+    }
+
+    suspend fun setMaxTokens(maxTokens: Int) {
+        dataStore.updateData {
+            it.toMutablePreferences().also { preferences ->
+                preferences[maxTokensKey] = maxTokens
+            }
+        }
+    }
+
     private companion object {
+        const val DEFAULT_MAX_TOKENS = 1024
         val systemPromptKey = stringPreferencesKey("system_prompt")
         val temperatureKey = doublePreferencesKey("temperature")
         val modelKey = stringPreferencesKey("model")
+        val maxTokensKey = intPreferencesKey("max_tokens")
     }
 }

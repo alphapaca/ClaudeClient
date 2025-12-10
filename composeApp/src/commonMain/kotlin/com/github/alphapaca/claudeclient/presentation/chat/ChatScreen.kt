@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
@@ -39,8 +40,10 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.unit.dp
 import com.github.alphapaca.claudeclient.domain.model.ConversationItem
+import com.github.alphapaca.claudeclient.domain.model.StopReason
 import com.github.alphapaca.claudeclient.presentation.widgets.BikeRecommendationCard
 import com.github.alphapaca.claudeclient.presentation.widgets.FancyWeatherWidget
+import com.mikepenz.markdown.m3.Markdown
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -180,6 +183,10 @@ private fun MessageBubble(message: ConversationItem.Text) {
         is ConversationItem.Text.Assistant -> formatInferenceTime(message.inferenceTimeMs)
         is ConversationItem.Text.User -> null
     }
+    val stopReasonInfo = when (message) {
+        is ConversationItem.Text.Assistant -> message.stopReason.toDisplayInfo()
+        is ConversationItem.Text.User -> null
+    }
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -199,20 +206,43 @@ private fun MessageBubble(message: ConversationItem.Text) {
                     text = roleLabel,
                     style = MaterialTheme.typography.labelSmall
                 )
-                timeLabel?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    stopReasonInfo?.let { (label, isWarning) ->
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isWarning) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        )
+                    }
+                    timeLabel?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
-            Text(
-                text = message.content,
-                style = MaterialTheme.typography.bodyMedium
-            )
+            SelectionContainer {
+                Markdown(
+                    content = message.content,
+                )
+            }
         }
     }
+}
+
+private fun StopReason.toDisplayInfo(): Pair<String, Boolean>? = when (this) {
+    StopReason.END_TURN -> null
+    StopReason.MAX_TOKENS -> "truncated" to true
+    StopReason.STOP_SEQUENCE -> "stop seq" to false
+    StopReason.TOOL_USE -> "tool use" to false
+    StopReason.CONTENT_FILTER -> "filtered" to true
+    StopReason.UNKNOWN -> "unknown" to false
 }
 
 private fun formatInferenceTime(timeMs: Long): String {

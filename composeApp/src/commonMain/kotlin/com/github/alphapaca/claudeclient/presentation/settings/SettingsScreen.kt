@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -39,6 +41,7 @@ fun SettingsScreen(
 ) {
     val systemPrompt by viewModel.systemPrompt.collectAsState()
     val temperature by viewModel.temperature.collectAsState()
+    val maxTokens by viewModel.maxTokens.collectAsState()
     val selectedModel by viewModel.selectedModel.collectAsState()
 
     Column(
@@ -56,6 +59,7 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
+                .verticalScroll(rememberScrollState())
         ) {
             OutlinedTextField(
                 value = systemPrompt,
@@ -69,6 +73,13 @@ fun SettingsScreen(
                 value = temperature,
                 onValueChange = viewModel::onTemperatureChange,
                 label = { Text("Temperature [0-1]") },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedTextField(
+                value = maxTokens,
+                onValueChange = viewModel::onMaxTokensChange,
+                label = { Text("Max Tokens [1-8192]") },
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(modifier = Modifier.height(16.dp))

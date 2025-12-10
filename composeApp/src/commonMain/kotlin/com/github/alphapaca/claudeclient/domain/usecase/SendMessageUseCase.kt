@@ -11,6 +11,7 @@ class SendMessageUseCase(
         val model = settingsRepository.getModel()
         val systemPrompt = settingsRepository.getSystemPrompt()
         val temperature = settingsRepository.getTemperature()
-        return conversationRepository.sendMessage(message, model, systemPrompt, temperature)
+        val maxTokens = settingsRepository.getMaxTokens()
+        return conversationRepository.sendMessage(message, model, systemPrompt, temperature, maxTokens)
     }
 }
