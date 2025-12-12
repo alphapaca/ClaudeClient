@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import com.github.alphapaca.claudeclient.domain.usecase.ClearConversationUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.CompactConversationUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetABikeUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetConversationUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetTemperatureFlowUseCase
@@ -25,6 +26,7 @@ class ChatViewModel(
     private val getABikeUseCase: GetABikeUseCase,
     private val setSystemPromptUseCase: SetSystemPromptUseCase,
     private val clearConversationUseCase: ClearConversationUseCase,
+    private val compactConversationUseCase: CompactConversationUseCase,
     getConversationUseCase: GetConversationUseCase,
     getTemperatureFlowUseCase: GetTemperatureFlowUseCase,
 ) : ViewModel() {
@@ -92,6 +94,12 @@ class ChatViewModel(
     fun clearMessages() {
         clearConversationUseCase()
         _error.value = null
+    }
+
+    fun compactConversation() {
+        launchWithLoading {
+            compactConversationUseCase()
+        }
     }
 
     private fun launchWithLoading(block: suspend () -> Unit) {

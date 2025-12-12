@@ -58,6 +58,10 @@ class ClaudeService(
                 role = ROLE_ASSISTANT,
                 content = content
             )
+            is ConversationItem.Summary -> ClaudeMessage(
+                role = ROLE_USER,
+                content = "[Previous conversation summary: $content]"
+            )
             is ConversationItem.Widget -> ClaudeMessage(
                 role = ROLE_ASSISTANT,
                 content = json.encodeToString(ConversationItem.Widget.serializer(), this)

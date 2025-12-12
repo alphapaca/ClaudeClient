@@ -49,4 +49,52 @@ class ConversationRepository(
     fun clearConversation() {
         conversation.value = Conversation(emptyList())
     }
+
+    suspend fun compactConversation(
+        model: LLMModel,
+        systemPrompt: String,
+        temperature: Double?,
+        maxTokens: Int,
+        keepRecentCount: Int = 2,
+    ) {
+        val items = conversation.value.items
+        if (items.size <= keepRecentCount + 1) return // Nothing to compact
+
+        val toCompact = items.dropLast(keepRecentCount)
+        val toKeep = items.takeLast(keepRecentCount)
+
+        val service = llmServices.find { it.isServiceFor(model) }
+            ?: error("No LLM service found for model: ${model.displayName}")
+
+        val summaryPrompt = buildString {
+            appendLine("Summarize the following conversation concisely, preserving all key facts, names, numbers, preferences, and decisions made. The summary will be used as context for continuing the conversation.")
+            appendLine()
+            toCompact.forEach { item ->
+                when (item) {
+                    is ConversationItem.Text.User -> appendLine("User: ${item.content}")
+                    is ConversationItem.Text.Assistant -> appendLine("Assistant: ${item.content}")
+                    is ConversationItem.Summary -> appendLine("Previous summary: ${item.content}")
+                    is ConversationItem.Widget -> appendLine("Assistant: [widget data]")
+                    is ConversationItem.Composed -> appendLine("Assistant: [composed response]")
+                }
+            }
+        }
+
+        val response = service.sendMessage(
+            messages = listOf(ConversationItem.Text.User(summaryPrompt)),
+            model = model,
+            systemPrompt = "You are a helpful assistant that creates concise conversation summaries.",
+            temperature = temperature,
+            maxTokens = maxTokens,
+        )
+
+        val summary = ConversationItem.Summary(
+            content = response.content,
+            compactedMessageCount = toCompact.size,
+        )
+
+        conversation.value = conversation.value.copy(
+            items = listOf(summary) + toKeep
+        )
+    }
 }

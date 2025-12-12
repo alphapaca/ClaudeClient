@@ -51,6 +51,11 @@ sealed interface ConversationItem {
         val parts: List<ConversationItem>,
     ) : ConversationItem
 
+    data class Summary(
+        val content: String,
+        val compactedMessageCount: Int,
+    ) : ConversationItem
+
     @Serializable
     sealed interface Widget : ConversationItem
 

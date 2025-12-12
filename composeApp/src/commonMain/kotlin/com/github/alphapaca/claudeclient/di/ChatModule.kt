@@ -8,6 +8,7 @@ import com.github.alphapaca.claudeclient.data.service.ClaudeService
 import com.github.alphapaca.claudeclient.data.service.DeepSeekService
 import com.github.alphapaca.claudeclient.data.service.LLMService
 import com.github.alphapaca.claudeclient.domain.usecase.ClearConversationUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.CompactConversationUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetABikeUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetConversationUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetMaxTokensUseCase
@@ -55,6 +56,7 @@ val appModule = module {
     factory { SendMessageUseCase(get(), get()) }
     factory { GetConversationUseCase(get()) }
     factory { ClearConversationUseCase(get()) }
+    factory { CompactConversationUseCase(get(), get()) }
     factory { GetABikeUseCase(get()) }
     factory { SetSystemPromptUseCase(get()) }
     factory { GetSystemPromptUseCase(get()) }
@@ -67,6 +69,6 @@ val appModule = module {
     factory { SetMaxTokensUseCase(get()) }
 
     // ViewModels
-    viewModel<ChatViewModel> { ChatViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel<ChatViewModel> { ChatViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel<SettingsViewModel> { SettingsViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
 }

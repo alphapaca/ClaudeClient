@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
@@ -77,6 +78,9 @@ fun ChatScreen(
                 }
             },
             actions = {
+                IconButton(onClick = { viewModel.compactConversation() }) {
+                    Icon(Icons.Default.Compress, contentDescription = "Compact conversation")
+                }
                 IconButton(onClick = { viewModel.clearMessages() }) {
                     Icon(Icons.Default.Delete, contentDescription = "Clear messages")
                 }
@@ -167,9 +171,46 @@ fun ChatScreen(
 private fun ConversationItemWidget(item: ConversationItem) {
     when (item) {
         is ConversationItem.Text -> MessageBubble(item)
+        is ConversationItem.Summary -> SummaryCard(item)
         is ConversationItem.WeatherData -> FancyWeatherWidget(item)
         is ConversationItem.BikeData -> BikeRecommendationCard(item)
         is ConversationItem.Composed -> item.parts.forEach { ConversationItemWidget(it) }
+    }
+}
+
+@Composable
+private fun SummaryCard(summary: ConversationItem.Summary) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = "Summary",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+                Text(
+                    text = "${summary.compactedMessageCount} messages compacted",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f),
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            SelectionContainer {
+                Text(
+                    text = summary.content,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+            }
+        }
     }
 }
 
