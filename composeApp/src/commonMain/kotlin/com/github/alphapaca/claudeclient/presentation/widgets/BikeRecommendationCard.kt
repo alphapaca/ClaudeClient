@@ -19,11 +19,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.github.alphapaca.claudeclient.domain.model.ConversationItem
+import com.github.alphapaca.claudeclient.domain.model.ConversationItem.ContentBlock.BikeData
 
 @Composable
 fun BikeRecommendationCard(
-    bikeData: ConversationItem.BikeData,
+    bikeData: BikeData,
 ) {
     Card(
         modifier = Modifier

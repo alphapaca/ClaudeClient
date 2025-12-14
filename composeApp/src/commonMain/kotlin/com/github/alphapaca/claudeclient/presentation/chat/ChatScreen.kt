@@ -14,37 +14,49 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.github.alphapaca.claudeclient.domain.model.ConversationInfo
 import com.github.alphapaca.claudeclient.domain.model.ConversationItem
 import com.github.alphapaca.claudeclient.domain.model.StopReason
 import com.github.alphapaca.claudeclient.presentation.widgets.BikeRecommendationCard
 import com.github.alphapaca.claudeclient.presentation.widgets.FancyWeatherWidget
 import com.mikepenz.markdown.m3.Markdown
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,9 +72,115 @@ fun ChatScreen(
     val temperature by viewModel.temperature.collectAsState(null)
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val conversations by viewModel.conversations.collectAsState(emptyList())
+    val currentConversationId by viewModel.currentConversationId.collectAsState(-1L)
 
     var inputText by remember { mutableStateOf("") }
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ConversationDrawerContent(
+                conversations = conversations,
+                currentConversationId = currentConversationId,
+                onNewConversation = {
+                    viewModel.createNewConversation()
+                    scope.launch { drawerState.close() }
+                },
+                onConversationSelected = { conversationId ->
+                    viewModel.switchConversation(conversationId)
+                    scope.launch { drawerState.close() }
+                },
+            )
+        },
+    ) {
+        ChatScreenContent(
+            modifier = modifier,
+            chatItems = chatItems,
+            tokensUsed = tokensUsed,
+            totalCost = totalCost,
+            temperature = temperature,
+            isLoading = isLoading,
+            error = error,
+            inputText = inputText,
+            onInputTextChange = { inputText = it },
+            onSendMessage = { message ->
+                viewModel.sendMessage(message)
+                inputText = ""
+            },
+            onSuggestClick = viewModel::onSuggestClick,
+            onCompactClick = viewModel::compactConversation,
+            onDeleteClick = viewModel::deleteCurrentConversation,
+            onSettingsClick = onSettingsClick,
+            onMenuClick = { scope.launch { drawerState.open() } },
+        )
+    }
+}
+
+@Composable
+private fun ConversationDrawerContent(
+    conversations: List<ConversationInfo>,
+    currentConversationId: Long,
+    onNewConversation: () -> Unit,
+    onConversationSelected: (Long) -> Unit,
+) {
+    ModalDrawerSheet {
+        Text(
+            text = "Conversations",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(16.dp)
+        )
+
+        NavigationDrawerItem(
+            icon = { Icon(Icons.Default.Add, contentDescription = null) },
+            label = { Text("New conversation") },
+            selected = false,
+            onClick = onNewConversation,
+            modifier = Modifier.padding(horizontal = 12.dp)
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+        LazyColumn {
+            items(conversations, key = { it.id }) { conversation ->
+                NavigationDrawerItem(
+                    label = {
+                        Text(
+                            text = conversation.name,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
+                    selected = conversation.id == currentConversationId,
+                    onClick = { onConversationSelected(conversation.id) },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ChatScreenContent(
+    modifier: Modifier,
+    chatItems: List<ChatItem>,
+    tokensUsed: Int,
+    totalCost: Double,
+    temperature: Double?,
+    isLoading: Boolean,
+    error: String?,
+    inputText: String,
+    onInputTextChange: (String) -> Unit,
+    onSendMessage: (String) -> Unit,
+    onSuggestClick: (ChatItem.Suggest) -> Unit,
+    onCompactClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    onMenuClick: () -> Unit,
+) {
     Column(modifier = modifier.fillMaxSize()) {
         TopAppBar(
             title = {
@@ -77,12 +195,17 @@ fun ChatScreen(
                     )
                 }
             },
+            navigationIcon = {
+                IconButton(onClick = onMenuClick) {
+                    Icon(Icons.Default.Menu, contentDescription = "Menu")
+                }
+            },
             actions = {
-                IconButton(onClick = { viewModel.compactConversation() }) {
+                IconButton(onClick = onCompactClick) {
                     Icon(Icons.Default.Compress, contentDescription = "Compact conversation")
                 }
-                IconButton(onClick = { viewModel.clearMessages() }) {
-                    Icon(Icons.Default.Delete, contentDescription = "Clear messages")
+                IconButton(onClick = onDeleteClick) {
+                    Icon(Icons.Default.Delete, contentDescription = "Delete conversation")
                 }
                 IconButton(onClick = onSettingsClick) {
                     Icon(Icons.Default.Settings, contentDescription = "Settings")
@@ -103,7 +226,7 @@ fun ChatScreen(
                     ) {
                         chatItem.suggests.forEach { suggest ->
                             SuggestionChip(
-                                onClick = { viewModel.onSuggestClick(suggest) },
+                                onClick = { onSuggestClick(suggest) },
                                 label = { Text(suggest.label) }
                             )
                         }
@@ -136,12 +259,11 @@ fun ChatScreen(
         ) {
             OutlinedTextField(
                 value = inputText,
-                onValueChange = { inputText = it },
+                onValueChange = onInputTextChange,
                 modifier = Modifier.weight(1f)
                     .onKeyEvent { keyEvent ->
                         if (keyEvent.key == Key.Enter && inputText.isNotBlank()) {
-                            viewModel.sendMessage(inputText.trim())
-                            inputText = ""
+                            onSendMessage(inputText.trim())
                             true
                         } else {
                             false
@@ -155,8 +277,7 @@ fun ChatScreen(
             Button(
                 onClick = {
                     if (inputText.isNotBlank()) {
-                        viewModel.sendMessage(inputText)
-                        inputText = ""
+                        onSendMessage(inputText)
                     }
                 },
                 enabled = !isLoading && inputText.isNotBlank()
@@ -170,11 +291,9 @@ fun ChatScreen(
 @Composable
 private fun ConversationItemWidget(item: ConversationItem) {
     when (item) {
-        is ConversationItem.Text -> MessageBubble(item)
+        is ConversationItem.User -> UserBubble(item)
+        is ConversationItem.Assistant -> AssistantBubble(item)
         is ConversationItem.Summary -> SummaryCard(item)
-        is ConversationItem.WeatherData -> FancyWeatherWidget(item)
-        is ConversationItem.BikeData -> BikeRecommendationCard(item)
-        is ConversationItem.Composed -> item.parts.forEach { ConversationItemWidget(it) }
     }
 }
 
@@ -215,27 +334,32 @@ private fun SummaryCard(summary: ConversationItem.Summary) {
 }
 
 @Composable
-private fun MessageBubble(message: ConversationItem.Text) {
-    val roleLabel = when (message) {
-        is ConversationItem.Text.Assistant -> message.model.displayName
-        is ConversationItem.Text.User -> "User"
-    }
-    val timeLabel = when (message) {
-        is ConversationItem.Text.Assistant -> formatInferenceTime(message.inferenceTimeMs)
-        is ConversationItem.Text.User -> null
-    }
-    val stopReasonInfo = when (message) {
-        is ConversationItem.Text.Assistant -> message.stopReason.toDisplayInfo()
-        is ConversationItem.Text.User -> null
-    }
+private fun UserBubble(message: ConversationItem.User) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (message is ConversationItem.Text.User) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.secondaryContainer
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = "User",
+                style = MaterialTheme.typography.labelSmall
+            )
+            SelectionContainer {
+                Text(text = message.content)
             }
+        }
+    }
+}
+
+@Composable
+private fun AssistantBubble(message: ConversationItem.Assistant) {
+    val stopReasonInfo = message.stopReason.toDisplayInfo()
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
         )
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -244,7 +368,7 @@ private fun MessageBubble(message: ConversationItem.Text) {
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text = roleLabel,
+                    text = message.model.displayName,
                     style = MaterialTheme.typography.labelSmall
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -259,21 +383,28 @@ private fun MessageBubble(message: ConversationItem.Text) {
                             },
                         )
                     }
-                    timeLabel?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    Text(
+                        text = formatInferenceTime(message.inferenceTimeMs),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
-            SelectionContainer {
-                Markdown(
-                    content = message.content,
-                )
+            message.content.forEach { block ->
+                ContentBlockWidget(block)
             }
         }
+    }
+}
+
+@Composable
+private fun ContentBlockWidget(block: ConversationItem.ContentBlock) {
+    when (block) {
+        is ConversationItem.ContentBlock.Text -> SelectionContainer {
+            Markdown(content = block.text)
+        }
+        is ConversationItem.ContentBlock.WeatherData -> FancyWeatherWidget(block)
+        is ConversationItem.ContentBlock.BikeData -> BikeRecommendationCard(block)
     }
 }
 

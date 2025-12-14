@@ -61,7 +61,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.github.alphapaca.claudeclient.domain.model.ConversationItem.WeatherData
+import com.github.alphapaca.claudeclient.domain.model.ConversationItem.ContentBlock.WeatherData
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin

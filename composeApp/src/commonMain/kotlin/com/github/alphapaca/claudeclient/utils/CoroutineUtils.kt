@@ -2,7 +2,7 @@ package com.github.alphapaca.claudeclient.utils
 
 import kotlinx.coroutines.CancellationException
 
-fun <T> runCatchingSuspend(block: () -> T): Result<T> {
+inline fun <T> runCatchingSuspend(block: () -> T): Result<T> {
     return try {
         Result.success(block())
     } catch (e: CancellationException) {

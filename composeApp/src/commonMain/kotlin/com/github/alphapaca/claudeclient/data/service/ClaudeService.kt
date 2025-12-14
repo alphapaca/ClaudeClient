@@ -1,5 +1,6 @@
 package com.github.alphapaca.claudeclient.data.service
 
+import co.touchlab.kermit.Logger
 import com.github.alphapaca.claudeclient.data.api.claude.ClaudeMessage
 import com.github.alphapaca.claudeclient.data.api.claude.ClaudeMessageRequest
 import com.github.alphapaca.claudeclient.data.api.claude.ClaudeMessageResponse
@@ -10,6 +11,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import kotlinx.serialization.json.Json
 
 class ClaudeService(
@@ -36,44 +38,55 @@ class ClaudeService(
             temperature = temperature,
         )
 
-        val response: ClaudeMessageResponse = client.post("v1/messages") {
+        val response = client.post("v1/messages") {
             setBody(request)
-        }.body()
+        }
+
+        val responseText = response.bodyAsText()
+
+        Logger.v(TAG) { "Content: $responseText" }
+
+        val responseDeserialized: ClaudeMessageResponse = response.body()
 
         return LLMResponse(
-            content = response.content.firstOrNull()?.text.orEmpty(),
-            inputTokens = response.usage.inputTokens,
-            outputTokens = response.usage.outputTokens,
-            stopReason = StopReason.fromClaudeReason(response.stopReason),
+            content = responseDeserialized.content.firstOrNull()?.text.orEmpty(),
+            inputTokens = responseDeserialized.usage.inputTokens,
+            outputTokens = responseDeserialized.usage.outputTokens,
+            stopReason = StopReason.fromClaudeReason(responseDeserialized.stopReason),
         )
     }
 
     private fun ConversationItem.toClaudeMessage(): ClaudeMessage {
         return when (this) {
-            is ConversationItem.Text.User -> ClaudeMessage(
+            is ConversationItem.User -> ClaudeMessage(
                 role = ROLE_USER,
                 content = content
             )
-            is ConversationItem.Text.Assistant -> ClaudeMessage(
+            is ConversationItem.Assistant -> ClaudeMessage(
                 role = ROLE_ASSISTANT,
-                content = content
+                content = content.toMessageContent()
             )
             is ConversationItem.Summary -> ClaudeMessage(
                 role = ROLE_USER,
                 content = "[Previous conversation summary: $content]"
             )
-            is ConversationItem.Widget -> ClaudeMessage(
-                role = ROLE_ASSISTANT,
-                content = json.encodeToString(ConversationItem.Widget.serializer(), this)
-            )
-            is ConversationItem.Composed -> ClaudeMessage(
-                role = ROLE_ASSISTANT,
-                content = parts.joinToString("") { it.toClaudeMessage().content }
-            )
+        }
+    }
+
+    private fun List<ConversationItem.ContentBlock>.toMessageContent(): String {
+        return joinToString("\n") { block ->
+            when (block) {
+                is ConversationItem.ContentBlock.Text -> block.text
+                is ConversationItem.ContentBlock.Widget -> json.encodeToString(
+                    ConversationItem.ContentBlock.Widget.serializer(),
+                    block
+                )
+            }
         }
     }
 
     private companion object {
+        const val TAG = "ClaudeService"
         const val ROLE_ASSISTANT = "assistant"
         const val ROLE_USER = "user"
     }

@@ -11,6 +11,7 @@ plugins {
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.buildConfig)
+    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
@@ -68,6 +69,13 @@ kotlin {
 
             // markdown
             implementation(libs.markdown.renderer.m3)
+
+            // SQLDelight
+            implementation(libs.sqldelight.runtime)
+            implementation(libs.sqldelight.coroutines)
+        }
+        androidMain.dependencies {
+            implementation(libs.sqldelight.driver.android)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -75,6 +83,7 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.sqldelight.driver.jvm)
         }
     }
 }
@@ -126,6 +135,14 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "com.github.alphapaca.claudeclient"
             packageVersion = "1.0.0"
+        }
+    }
+}
+
+sqldelight {
+    databases {
+        create("ClaudeClientDatabase") {
+            packageName.set("com.github.alphapaca.claudeclient.data.db")
         }
     }
 }

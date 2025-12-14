@@ -1,5 +1,6 @@
 package com.github.alphapaca.claudeclient.data.service
 
+import co.touchlab.kermit.Logger
 import com.github.alphapaca.claudeclient.data.api.deepseek.DeepSeekMessage
 import com.github.alphapaca.claudeclient.data.api.deepseek.DeepSeekMessageRequest
 import com.github.alphapaca.claudeclient.data.api.deepseek.DeepSeekMessageResponse
@@ -48,6 +49,9 @@ class DeepSeekService(
         }.body()
 
         val choice = response.choices.firstOrNull()
+        Logger.d(TAG) { "Response: model=${response.model}, finishReason=${choice?.finishReason}, prompt=${response.usage.promptTokens}, completion=${response.usage.completionTokens}" }
+        Logger.v(TAG) { "Content: ${choice?.message?.content?.take(500)}" }
+
         return LLMResponse(
             content = choice?.message?.content.orEmpty(),
             inputTokens = response.usage.promptTokens,
@@ -58,30 +62,35 @@ class DeepSeekService(
 
     private fun ConversationItem.toDeepSeekMessage(): DeepSeekMessage {
         return when (this) {
-            is ConversationItem.Text.User -> DeepSeekMessage(
+            is ConversationItem.User -> DeepSeekMessage(
                 role = ROLE_USER,
                 content = content
             )
-            is ConversationItem.Text.Assistant -> DeepSeekMessage(
+            is ConversationItem.Assistant -> DeepSeekMessage(
                 role = ROLE_ASSISTANT,
-                content = content
+                content = content.toMessageContent()
             )
             is ConversationItem.Summary -> DeepSeekMessage(
                 role = ROLE_USER,
                 content = "[Previous conversation summary: $content]"
             )
-            is ConversationItem.Widget -> DeepSeekMessage(
-                role = ROLE_ASSISTANT,
-                content = json.encodeToString(ConversationItem.Widget.serializer(), this)
-            )
-            is ConversationItem.Composed -> DeepSeekMessage(
-                role = ROLE_ASSISTANT,
-                content = parts.joinToString("") { it.toDeepSeekMessage().content }
-            )
+        }
+    }
+
+    private fun List<ConversationItem.ContentBlock>.toMessageContent(): String {
+        return joinToString("\n") { block ->
+            when (block) {
+                is ConversationItem.ContentBlock.Text -> block.text
+                is ConversationItem.ContentBlock.Widget -> json.encodeToString(
+                    ConversationItem.ContentBlock.Widget.serializer(),
+                    block
+                )
+            }
         }
     }
 
     private companion object {
+        const val TAG = "DeepSeekService"
         const val ROLE_ASSISTANT = "assistant"
         const val ROLE_USER = "user"
         const val ROLE_SYSTEM = "system"

@@ -5,10 +5,11 @@ import com.github.alphapaca.claudeclient.domain.model.ConversationItem
 class GetWeatherUseCase(
     private val sendMessageUseCase: SendMessageUseCase,
 ) {
-    suspend operator fun invoke() {
-        val weatherConditionsList = ConversationItem.WeatherData.Condition.entries
+    suspend operator fun invoke(conversationId: Long): Long {
+        val weatherConditionsList = ConversationItem.ContentBlock.WeatherData.Condition.entries
             .joinToString(separator = ", ")
-        sendMessageUseCase(
+        return sendMessageUseCase(
+            conversationId,
             """
                 You are a weather API. You need to ask about what city weather user want to know about.
                 After user answered about his city, you must respond with ONLY valid JSON, no other text.

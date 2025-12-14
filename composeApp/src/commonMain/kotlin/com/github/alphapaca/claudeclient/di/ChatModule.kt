@@ -2,6 +2,8 @@ package com.github.alphapaca.claudeclient.di
 
 import com.github.alphapaca.claudeclient.data.api.ClaudeApiClientFactory
 import com.github.alphapaca.claudeclient.data.api.DeepSeekApiClientFactory
+import com.github.alphapaca.claudeclient.data.local.ConversationLocalDataSource
+import com.github.alphapaca.claudeclient.data.parser.ContentBlockParser
 import com.github.alphapaca.claudeclient.data.repository.ConversationRepository
 import com.github.alphapaca.claudeclient.data.repository.SettingsRepository
 import com.github.alphapaca.claudeclient.data.service.ClaudeService
@@ -9,10 +11,13 @@ import com.github.alphapaca.claudeclient.data.service.DeepSeekService
 import com.github.alphapaca.claudeclient.data.service.LLMService
 import com.github.alphapaca.claudeclient.domain.usecase.ClearConversationUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.CompactConversationUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.DeleteConversationUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetABikeUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.GetAllConversationsUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetConversationUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetMaxTokensUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetModelUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.GetMostRecentConversationIdUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetSystemPromptUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetTemperatureFlowUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetTemperatureUseCase
@@ -47,8 +52,14 @@ val appModule = module {
     single<LLMService>(named("deepseek")) { DeepSeekService(get(named("deepseek")), get()) }
     single<List<LLMService>> { listOf(get(named("claude")), get(named("deepseek"))) }
 
+    // Parsers
+    factory { ContentBlockParser(get()) }
+
+    // Local Data Sources
+    single { ConversationLocalDataSource(get(), get()) }
+
     // Repositories
-    single<ConversationRepository> { ConversationRepository(get()) }
+    single<ConversationRepository> { ConversationRepository(get(), get(), get()) }
     factory { SettingsRepository(get()) }
 
     // Use Cases
@@ -67,8 +78,11 @@ val appModule = module {
     factory { SetModelUseCase(get()) }
     factory { GetMaxTokensUseCase(get()) }
     factory { SetMaxTokensUseCase(get()) }
+    factory { GetAllConversationsUseCase(get()) }
+    factory { DeleteConversationUseCase(get()) }
+    factory { GetMostRecentConversationIdUseCase(get()) }
 
     // ViewModels
-    viewModel<ChatViewModel> { ChatViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel<ChatViewModel> { ChatViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel<SettingsViewModel> { SettingsViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
 }

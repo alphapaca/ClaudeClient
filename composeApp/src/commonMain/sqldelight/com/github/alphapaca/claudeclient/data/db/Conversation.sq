@@ -1,0 +1,70 @@
+CREATE TABLE Conversation (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL
+);
+
+CREATE TABLE Message (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversationId INTEGER NOT NULL,
+    position INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    content TEXT NOT NULL,
+    modelApiName TEXT,
+    inputTokens INTEGER,
+    outputTokens INTEGER,
+    inferenceTimeMs INTEGER,
+    stopReason TEXT,
+    compactedMessageCount INTEGER,
+    createdAt INTEGER NOT NULL,
+    FOREIGN KEY (conversationId) REFERENCES Conversation(id) ON DELETE CASCADE
+);
+
+CREATE INDEX message_conversation_id ON Message(conversationId);
+CREATE INDEX message_position ON Message(conversationId, position);
+
+-- Conversation queries
+getConversationById:
+SELECT * FROM Conversation WHERE id = ?;
+
+getAllConversations:
+SELECT * FROM Conversation ORDER BY updatedAt DESC;
+
+getMostRecentConversation:
+SELECT * FROM Conversation ORDER BY updatedAt DESC LIMIT 1;
+
+insertConversation:
+INSERT INTO Conversation(name, createdAt, updatedAt) VALUES (?, ?, ?);
+
+lastInsertRowId:
+SELECT last_insert_rowid();
+
+updateConversationTimestamp:
+UPDATE Conversation SET updatedAt = ? WHERE id = ?;
+
+updateConversationName:
+UPDATE Conversation SET name = ?, updatedAt = ? WHERE id = ?;
+
+deleteConversation:
+DELETE FROM Conversation WHERE id = ?;
+
+getConversationCount:
+SELECT COUNT(*) FROM Conversation;
+
+-- Message queries
+getMessagesByConversationId:
+SELECT * FROM Message WHERE conversationId = ? ORDER BY position ASC;
+
+insertMessage:
+INSERT INTO Message(conversationId, position, type, content, modelApiName, inputTokens, outputTokens, inferenceTimeMs, stopReason, compactedMessageCount, createdAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteMessagesByConversationId:
+DELETE FROM Message WHERE conversationId = ?;
+
+getMessageCount:
+SELECT COUNT(*) FROM Message WHERE conversationId = ?;
+
+deleteMessagesAfterPosition:
+DELETE FROM Message WHERE conversationId = ? AND position > ?;

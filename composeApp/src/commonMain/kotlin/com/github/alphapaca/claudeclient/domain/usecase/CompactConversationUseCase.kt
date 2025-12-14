@@ -7,12 +7,13 @@ class CompactConversationUseCase(
     private val conversationRepository: ConversationRepository,
     private val settingsRepository: SettingsRepository,
 ) {
-    suspend operator fun invoke() {
+    suspend operator fun invoke(conversationId: Long) {
         val model = settingsRepository.getModel()
         val systemPrompt = settingsRepository.getSystemPrompt()
         val temperature = settingsRepository.getTemperature()
         val maxTokens = settingsRepository.getMaxTokens()
         conversationRepository.compactConversation(
+            conversationId = conversationId,
             model = model,
             systemPrompt = systemPrompt,
             temperature = temperature,
