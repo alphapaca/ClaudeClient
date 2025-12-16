@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.alphapaca.claudeclient.domain.model.LLMModel
 import com.github.alphapaca.claudeclient.domain.usecase.GetMaxTokensUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.GetMcpServerCommandUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetModelUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetSystemPromptUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetTemperatureUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetMaxTokensUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.SetMcpServerCommandUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetModelUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetSystemPromptUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetTemperatureUseCase
@@ -24,6 +26,8 @@ class SettingsViewModel(
     private val setModelUseCase: SetModelUseCase,
     private val getMaxTokensUseCase: GetMaxTokensUseCase,
     private val setMaxTokensUseCase: SetMaxTokensUseCase,
+    private val getMcpServerCommandUseCase: GetMcpServerCommandUseCase,
+    private val setMcpServerCommandUseCase: SetMcpServerCommandUseCase,
 ) : ViewModel() {
 
     private val _systemPrompt = MutableStateFlow("")
@@ -38,6 +42,9 @@ class SettingsViewModel(
     private val _selectedModel = MutableStateFlow(LLMModel.DEFAULT)
     val selectedModel: StateFlow<LLMModel> = _selectedModel
 
+    private val _mcpServerCommand = MutableStateFlow("")
+    val mcpServerCommand: StateFlow<String> = _mcpServerCommand
+
     init {
         loadSettings()
     }
@@ -48,6 +55,7 @@ class SettingsViewModel(
             _temperature.value = getTemperatureUseCase()?.toString().orEmpty()
             _maxTokens.value = getMaxTokensUseCase().toString()
             _selectedModel.value = getModelUseCase()
+            _mcpServerCommand.value = getMcpServerCommandUseCase()
         }
     }
 
@@ -67,12 +75,17 @@ class SettingsViewModel(
         _selectedModel.value = model
     }
 
+    fun onMcpServerCommandChange(command: String) {
+        _mcpServerCommand.value = command
+    }
+
     fun saveSettings() {
         viewModelScope.launch {
             setSystemPromptUseCase(_systemPrompt.value)
             setTemperatureUseCase(_temperature.value.toDoubleOrNull()?.coerceIn(0.0, 1.0))
             setMaxTokensUseCase(_maxTokens.value.toIntOrNull()?.coerceIn(1, 8192) ?: 1024)
             setModelUseCase(_selectedModel.value)
+            setMcpServerCommandUseCase(_mcpServerCommand.value)
             _temperature.value = getTemperatureUseCase()?.toString().orEmpty()
             _maxTokens.value = getMaxTokensUseCase().toString()
         }

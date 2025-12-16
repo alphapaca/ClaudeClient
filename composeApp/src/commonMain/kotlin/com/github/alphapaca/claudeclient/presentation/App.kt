@@ -12,7 +12,9 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.github.alphapaca.claudeclient.di.appModule
 import com.github.alphapaca.claudeclient.presentation.chat.ChatScreen
+import com.github.alphapaca.claudeclient.presentation.checktools.CheckToolsScreen
 import com.github.alphapaca.claudeclient.presentation.navigation.ChatKey
+import com.github.alphapaca.claudeclient.presentation.navigation.CheckToolsKey
 import com.github.alphapaca.claudeclient.presentation.navigation.SettingsKey
 import com.github.alphapaca.claudeclient.presentation.settings.SettingsScreen
 import org.koin.compose.KoinApplication
@@ -38,6 +40,14 @@ fun App(platformModule: Module) {
                     }
                     entry<SettingsKey> {
                         SettingsScreen(
+                            modifier = Modifier.Companion.padding(innerPadding),
+                            onBackClick = { backStack.removeLastOrNull() },
+                            onCheckToolsClick = { command -> backStack.add(CheckToolsKey(command)) }
+                        )
+                    }
+                    entry<CheckToolsKey> { key ->
+                        CheckToolsScreen(
+                            command = key.command,
                             modifier = Modifier.Companion.padding(innerPadding),
                             onBackClick = { backStack.removeLastOrNull() }
                         )

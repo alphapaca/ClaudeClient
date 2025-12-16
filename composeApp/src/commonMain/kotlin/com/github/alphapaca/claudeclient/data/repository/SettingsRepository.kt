@@ -70,11 +70,24 @@ class SettingsRepository(
         }
     }
 
+    suspend fun getMcpServerCommand(): String {
+        return dataStore.data.first().toPreferences()[mcpServerCommandKey].orEmpty()
+    }
+
+    suspend fun setMcpServerCommand(command: String) {
+        dataStore.updateData {
+            it.toMutablePreferences().also { preferences ->
+                preferences[mcpServerCommandKey] = command
+            }
+        }
+    }
+
     private companion object {
         const val DEFAULT_MAX_TOKENS = 1024
         val systemPromptKey = stringPreferencesKey("system_prompt")
         val temperatureKey = doublePreferencesKey("temperature")
         val modelKey = stringPreferencesKey("model")
         val maxTokensKey = intPreferencesKey("max_tokens")
+        val mcpServerCommandKey = stringPreferencesKey("mcp_server_command")
     }
 }

@@ -3,19 +3,26 @@ package com.github.alphapaca.claudeclient.di
 import com.github.alphapaca.claudeclient.data.api.ClaudeApiClientFactory
 import com.github.alphapaca.claudeclient.data.api.DeepSeekApiClientFactory
 import com.github.alphapaca.claudeclient.data.local.ConversationLocalDataSource
+import com.github.alphapaca.claudeclient.data.mcp.MCPClientManager
+import com.github.alphapaca.claudeclient.data.mcp.createMCPClientManager
 import com.github.alphapaca.claudeclient.data.parser.ContentBlockParser
 import com.github.alphapaca.claudeclient.data.repository.ConversationRepository
 import com.github.alphapaca.claudeclient.data.repository.SettingsRepository
 import com.github.alphapaca.claudeclient.data.service.ClaudeService
 import com.github.alphapaca.claudeclient.data.service.DeepSeekService
 import com.github.alphapaca.claudeclient.data.service.LLMService
+import com.github.alphapaca.claudeclient.domain.usecase.CallMCPToolUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.ClearConversationUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.CompactConversationUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.ConnectMCPServerUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.DeleteConversationUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.DisconnectMCPServerUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetABikeUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetAllConversationsUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetConversationUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.GetMCPToolsUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetMaxTokensUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.GetMcpServerCommandUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetModelUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetMostRecentConversationIdUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetSystemPromptUseCase
@@ -24,10 +31,12 @@ import com.github.alphapaca.claudeclient.domain.usecase.GetTemperatureUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetWeatherUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SendMessageUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetMaxTokensUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.SetMcpServerCommandUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetModelUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetSystemPromptUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetTemperatureUseCase
 import com.github.alphapaca.claudeclient.presentation.chat.ChatViewModel
+import com.github.alphapaca.claudeclient.presentation.checktools.CheckToolsViewModel
 import com.github.alphapaca.claudeclient.presentation.settings.SettingsViewModel
 import kotlinx.serialization.json.Json
 import org.koin.core.module.dsl.viewModel
@@ -51,6 +60,9 @@ val appModule = module {
     single<LLMService>(named("claude")) { ClaudeService(get(named("claude")), get()) }
     single<LLMService>(named("deepseek")) { DeepSeekService(get(named("deepseek")), get()) }
     single<List<LLMService>> { listOf(get(named("claude")), get(named("deepseek"))) }
+
+    // MCP Client
+    single<MCPClientManager> { createMCPClientManager() }
 
     // Parsers
     factory { ContentBlockParser(get()) }
@@ -81,8 +93,15 @@ val appModule = module {
     factory { GetAllConversationsUseCase(get()) }
     factory { DeleteConversationUseCase(get()) }
     factory { GetMostRecentConversationIdUseCase(get()) }
+    factory { GetMCPToolsUseCase(get()) }
+    factory { CallMCPToolUseCase(get()) }
+    factory { ConnectMCPServerUseCase(get()) }
+    factory { DisconnectMCPServerUseCase(get()) }
+    factory { GetMcpServerCommandUseCase(get()) }
+    factory { SetMcpServerCommandUseCase(get()) }
 
     // ViewModels
     viewModel<ChatViewModel> { ChatViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    viewModel<SettingsViewModel> { SettingsViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel<SettingsViewModel> { SettingsViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel<CheckToolsViewModel> { CheckToolsViewModel(get(), get(), get()) }
 }

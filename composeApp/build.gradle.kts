@@ -73,6 +73,9 @@ kotlin {
             // SQLDelight
             implementation(libs.sqldelight.runtime)
             implementation(libs.sqldelight.coroutines)
+
+            // MCP SDK
+            implementation(libs.mcp.kotlin.sdk)
         }
         androidMain.dependencies {
             implementation(libs.sqldelight.driver.android)

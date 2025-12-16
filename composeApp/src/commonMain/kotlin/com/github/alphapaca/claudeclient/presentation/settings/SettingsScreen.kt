@@ -37,12 +37,14 @@ import org.koin.compose.viewmodel.koinViewModel
 fun SettingsScreen(
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
+    onCheckToolsClick: (command: String) -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val systemPrompt by viewModel.systemPrompt.collectAsState()
     val temperature by viewModel.temperature.collectAsState()
     val maxTokens by viewModel.maxTokens.collectAsState()
     val selectedModel by viewModel.selectedModel.collectAsState()
+    val mcpServerCommand by viewModel.mcpServerCommand.collectAsState()
 
     Column(
         modifier = modifier.fillMaxSize()
@@ -82,6 +84,26 @@ fun SettingsScreen(
                 label = { Text("Max Tokens [1-8192]") },
                 modifier = Modifier.fillMaxWidth(),
             )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "MCP Server Command",
+                style = MaterialTheme.typography.labelMedium,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = mcpServerCommand,
+                onValueChange = viewModel::onMcpServerCommandChange,
+                label = { Text("Command (e.g., npx -y @modelcontextprotocol/server-weather)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = { onCheckToolsClick(mcpServerCommand) },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Check Tools")
+            }
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "Model",
