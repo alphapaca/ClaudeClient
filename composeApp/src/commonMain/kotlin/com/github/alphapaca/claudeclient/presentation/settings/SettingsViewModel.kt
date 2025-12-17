@@ -1,5 +1,6 @@
 package com.github.alphapaca.claudeclient.presentation.settings
 
+import ClaudeClient.composeApp.BuildConfig
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
@@ -80,7 +81,7 @@ class SettingsViewModel(
             _temperature.value = getTemperatureUseCase()?.toString().orEmpty()
             _maxTokens.value = getMaxTokensUseCase().toString()
             _selectedModel.value = getModelUseCase()
-            _mcpServerCommand.value = getMcpServerCommandUseCase()
+            _mcpServerCommand.value = getMcpServerCommandUseCase().ifBlank { DEFAULT_MCP_COMMAND }
         }
     }
 
@@ -171,5 +172,6 @@ class SettingsViewModel(
     companion object {
         private const val TAG = "SettingsViewModel"
         const val MCP_SERVER_NAME = "mcp-server"
+        private val DEFAULT_MCP_COMMAND = "java -jar ${BuildConfig.HN_MCP_JAR_PATH}"
     }
 }

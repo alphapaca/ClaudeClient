@@ -149,3 +149,18 @@ sqldelight {
         }
     }
 }
+
+// Make run task depend on hn-mcp jar being built first
+afterEvaluate {
+    tasks.findByName("run")?.dependsOn(":hn-mcp:jar")
+}
+
+// Helper to get the hn-mcp jar path for runtime usage
+val hnMcpJarPath: Provider<String> = provider {
+    project(":hn-mcp").tasks.named<Jar>("jar").get().archiveFile.get().asFile.absolutePath
+}
+
+// Generate build config with hn-mcp jar path
+buildConfig {
+    buildConfigField("HN_MCP_JAR_PATH", hnMcpJarPath)
+}

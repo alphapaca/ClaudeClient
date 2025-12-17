@@ -1,5 +1,6 @@
 package com.github.alphapaca.claudeclient.domain.usecase
 
+import ClaudeClient.composeApp.BuildConfig
 import co.touchlab.kermit.Logger
 import com.github.alphapaca.claudeclient.data.mcp.MCPClientManager
 import com.github.alphapaca.claudeclient.data.mcp.MCPServerConfig
@@ -10,10 +11,9 @@ class AutoConnectMCPServerUseCase(
     private val mcpClientManager: MCPClientManager,
 ) {
     suspend operator fun invoke() {
-        val command = settingsRepository.getMcpServerCommand()
-        if (command.isBlank()) {
-            Logger.d(TAG) { "No MCP server command configured, skipping auto-connect" }
-            return
+        val command = settingsRepository.getMcpServerCommand().ifBlank {
+            // Use built-in hn-mcp server as default
+            DEFAULT_MCP_COMMAND
         }
 
         val parts = command.split(" ").filter { it.isNotBlank() }
@@ -42,5 +42,6 @@ class AutoConnectMCPServerUseCase(
     companion object {
         private const val TAG = "AutoConnectMCP"
         private const val MCP_SERVER_NAME = "mcp-server"
+        private val DEFAULT_MCP_COMMAND = "java -jar ${BuildConfig.HN_MCP_JAR_PATH}"
     }
 }
