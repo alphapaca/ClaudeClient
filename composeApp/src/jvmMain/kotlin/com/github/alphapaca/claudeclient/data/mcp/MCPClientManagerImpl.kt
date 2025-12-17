@@ -40,12 +40,33 @@ class MCPClientManagerImpl : MCPClientManager {
 
             Logger.d(TAG) { "Starting MCP server: ${config.name} (${config.command} ${config.args.joinToString(" ")})" }
 
-            val processBuilder = ProcessBuilder(listOf(config.command) + config.args).apply {
+            // Strip surrounding quotes from args (users may copy-paste paths with quotes)
+            val cleanedArgs = config.args.map { arg ->
+                arg.trim().removeSurrounding("\"").removeSurrounding("'")
+            }
+
+            val processBuilder = ProcessBuilder(listOf(config.command) + cleanedArgs).apply {
                 environment().putAll(config.env)
                 redirectErrorStream(false)
             }
 
             val process = processBuilder.start()
+
+            // Check if process exited immediately
+            val exitedImmediately = process.waitFor(500, java.util.concurrent.TimeUnit.MILLISECONDS)
+            if (exitedImmediately) {
+                val exitCode = process.exitValue()
+                val errorOutput = process.errorStream.bufferedReader().readText()
+                val stdOutput = process.inputStream.bufferedReader().readText()
+                Logger.e(TAG) { "MCP server process exited immediately with code $exitCode" }
+                if (errorOutput.isNotBlank()) {
+                    Logger.e(TAG) { "stderr: $errorOutput" }
+                }
+                if (stdOutput.isNotBlank()) {
+                    Logger.e(TAG) { "stdout: $stdOutput" }
+                }
+                throw IllegalStateException("MCP server process exited immediately with code $exitCode: $errorOutput")
+            }
 
             val client = Client(
                 clientInfo = Implementation(
@@ -72,15 +93,24 @@ class MCPClientManagerImpl : MCPClientManager {
     }
 
     override suspend fun disconnectServer(serverName: String): Unit = withContext(Dispatchers.IO) {
+        Logger.d(TAG) { "disconnectServer called for: $serverName" }
         connections.remove(serverName)?.let { connection ->
             runCatching {
-                connection.transport.close()
+                Logger.d(TAG) { "Destroying process..." }
                 connection.process.destroy()
+                Logger.d(TAG) { "Process destroyed, closing transport..." }
+                // Use withTimeout to prevent hanging on transport.close()
+                kotlinx.coroutines.withTimeoutOrNull(2000) {
+                    connection.transport.close()
+                } ?: Logger.w(TAG) { "Transport close timed out" }
+                Logger.d(TAG) { "Transport closed" }
+            }.onFailure { e ->
+                Logger.e(TAG, e) { "Error during disconnect" }
             }
             _connectedServers.update { it - serverName }
             refreshTools()
             Logger.i(TAG) { "Disconnected from MCP server: $serverName" }
-        }
+        } ?: Logger.w(TAG) { "Server not found: $serverName" }
         Unit
     }
 
@@ -100,7 +130,8 @@ class MCPClientManagerImpl : MCPClientManager {
                             serverName = serverName,
                             name = tool.name,
                             description = tool.description,
-                            inputSchema = tool.inputSchema.properties,
+                            inputSchemaProperties = tool.inputSchema.properties,
+                            inputSchemaRequired = tool.inputSchema.required,
                         )
                     )
                 }

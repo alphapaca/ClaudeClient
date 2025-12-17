@@ -1,9 +1,12 @@
 package com.github.alphapaca.claudeclient.data.service
 
 import co.touchlab.kermit.Logger
+import com.github.alphapaca.claudeclient.data.api.deepseek.DeepSeekFunction
 import com.github.alphapaca.claudeclient.data.api.deepseek.DeepSeekMessage
 import com.github.alphapaca.claudeclient.data.api.deepseek.DeepSeekMessageRequest
 import com.github.alphapaca.claudeclient.data.api.deepseek.DeepSeekMessageResponse
+import com.github.alphapaca.claudeclient.data.api.deepseek.DeepSeekTool
+import com.github.alphapaca.claudeclient.data.mcp.MCPTool
 import com.github.alphapaca.claudeclient.domain.model.ConversationItem
 import com.github.alphapaca.claudeclient.domain.model.LLMModel
 import com.github.alphapaca.claudeclient.domain.model.StopReason
@@ -12,6 +15,10 @@ import io.ktor.client.call.body
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 
 class DeepSeekService(
     private val client: HttpClient,
@@ -28,11 +35,14 @@ class DeepSeekService(
         systemPrompt: String?,
         temperature: Double?,
         maxTokens: Int,
+        tools: List<MCPTool>,
     ): LLMResponse {
         val systemMessages = systemPrompt
             ?.takeIf { it.isNotBlank() }
             ?.let { listOf(DeepSeekMessage(role = ROLE_SYSTEM, content = it)) }
             .orEmpty()
+
+        val deepSeekTools = tools.map { it.toDeepSeekTool() }.takeIf { it.isNotEmpty() }
 
         val request = DeepSeekMessageRequest(
             model = model.apiName,
@@ -42,6 +52,7 @@ class DeepSeekService(
             // We normalize from [0, 1] to [0, 2] to match Claude's behavior
             // where 0 is least variability and 1 is most
             temperature = temperature?.let { it * 2.0 },
+            tools = deepSeekTools,
         )
 
         val response: DeepSeekMessageResponse = client.post("chat/completions") {
@@ -87,6 +98,24 @@ class DeepSeekService(
                 )
             }
         }
+    }
+
+    private fun MCPTool.toDeepSeekTool(): DeepSeekTool {
+        val parameters = if (inputSchemaProperties != null || inputSchemaRequired != null) {
+            buildJsonObject {
+                put("type", "object")
+                inputSchemaProperties?.let { put("properties", it) }
+                inputSchemaRequired?.let { putJsonArray("required") { it.forEach { add(JsonPrimitive(it)) } } }
+            }
+        } else null
+        return DeepSeekTool(
+            type = "function",
+            function = DeepSeekFunction(
+                name = name,
+                description = description,
+                parameters = parameters,
+            ),
+        )
     }
 
     private companion object {

@@ -49,6 +49,7 @@ class ConversationLocalDataSource(
     }
 
     suspend fun deleteConversation(conversationId: Long) = withContext(Dispatchers.IO) {
+        queries.deleteMessagesByConversationId(conversationId)
         queries.deleteConversation(conversationId)
     }
 

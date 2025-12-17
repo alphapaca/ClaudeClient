@@ -6,5 +6,6 @@ data class MCPTool(
     val serverName: String,
     val name: String,
     val description: String?,
-    val inputSchema: JsonObject? = null,
+    val inputSchemaProperties: JsonObject? = null,
+    val inputSchemaRequired: List<String>? = null,
 )

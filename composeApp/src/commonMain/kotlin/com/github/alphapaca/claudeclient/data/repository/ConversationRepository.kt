@@ -1,6 +1,8 @@
 package com.github.alphapaca.claudeclient.data.repository
 
+import co.touchlab.kermit.Logger
 import com.github.alphapaca.claudeclient.data.local.ConversationLocalDataSource
+import com.github.alphapaca.claudeclient.data.mcp.MCPTool
 import com.github.alphapaca.claudeclient.data.parser.ContentBlockParser
 import com.github.alphapaca.claudeclient.data.service.LLMService
 import com.github.alphapaca.claudeclient.domain.model.Conversation
@@ -46,6 +48,7 @@ class ConversationRepository(
         systemPrompt: String,
         temperature: Double?,
         maxTokens: Int,
+        tools: List<MCPTool> = emptyList(),
     ): Long {
         val actualConversationId = if (conversationId == NEW_CONVERSATION_ID) {
             val name = generateConversationName(message)
@@ -70,8 +73,12 @@ class ConversationRepository(
                 systemPrompt = systemPrompt.takeIf { it.isNotBlank() },
                 temperature = temperature,
                 maxTokens = maxTokens,
+                tools = tools,
             )
         }
+
+        Logger.d(TAG) { "LLM response content: '${response.content}'" }
+        Logger.d(TAG) { "LLM response tokens: in=${response.inputTokens}, out=${response.outputTokens}" }
 
         val assistantMessage = ConversationItem.Assistant(
             content = contentBlockParser.parse(response.content),
@@ -82,7 +89,9 @@ class ConversationRepository(
             stopReason = response.stopReason,
         )
 
+        Logger.d(TAG) { "Saving assistant message with ${assistantMessage.content.size} content blocks" }
         localDataSource.saveMessage(actualConversationId, messagesForApi.size, assistantMessage)
+        Logger.d(TAG) { "Message saved to conversation $actualConversationId" }
         return actualConversationId
     }
 
@@ -144,6 +153,7 @@ class ConversationRepository(
     }
 
     companion object {
+        private const val TAG = "ConversationRepository"
         private const val MAX_CONVERSATION_NAME_LENGTH = 30
     }
 }

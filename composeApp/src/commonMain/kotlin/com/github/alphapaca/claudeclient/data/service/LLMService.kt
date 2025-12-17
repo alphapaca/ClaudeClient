@@ -1,5 +1,6 @@
 package com.github.alphapaca.claudeclient.data.service
 
+import com.github.alphapaca.claudeclient.data.mcp.MCPTool
 import com.github.alphapaca.claudeclient.domain.model.ConversationItem
 import com.github.alphapaca.claudeclient.domain.model.LLMModel
 import com.github.alphapaca.claudeclient.domain.model.StopReason
@@ -20,5 +21,6 @@ interface LLMService {
         systemPrompt: String?,
         temperature: Double?,
         maxTokens: Int,
+        tools: List<MCPTool> = emptyList(),
     ): LLMResponse
 }

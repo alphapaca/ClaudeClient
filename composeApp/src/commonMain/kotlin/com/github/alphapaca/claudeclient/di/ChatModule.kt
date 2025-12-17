@@ -11,6 +11,7 @@ import com.github.alphapaca.claudeclient.data.repository.SettingsRepository
 import com.github.alphapaca.claudeclient.data.service.ClaudeService
 import com.github.alphapaca.claudeclient.data.service.DeepSeekService
 import com.github.alphapaca.claudeclient.data.service.LLMService
+import com.github.alphapaca.claudeclient.domain.usecase.AutoConnectMCPServerUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.CallMCPToolUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.ClearConversationUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.CompactConversationUseCase
@@ -20,6 +21,7 @@ import com.github.alphapaca.claudeclient.domain.usecase.DisconnectMCPServerUseCa
 import com.github.alphapaca.claudeclient.domain.usecase.GetABikeUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetAllConversationsUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetConversationUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.GetMCPConnectionStateUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetMCPToolsUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetMaxTokensUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetMcpServerCommandUseCase
@@ -36,7 +38,6 @@ import com.github.alphapaca.claudeclient.domain.usecase.SetModelUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetSystemPromptUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetTemperatureUseCase
 import com.github.alphapaca.claudeclient.presentation.chat.ChatViewModel
-import com.github.alphapaca.claudeclient.presentation.checktools.CheckToolsViewModel
 import com.github.alphapaca.claudeclient.presentation.settings.SettingsViewModel
 import kotlinx.serialization.json.Json
 import org.koin.core.module.dsl.viewModel
@@ -56,13 +57,13 @@ val appModule = module {
     single(named("claude")) { ClaudeApiClientFactory.create(get()) }
     single(named("deepseek")) { DeepSeekApiClientFactory.create(get()) }
 
-    // LLM Services
-    single<LLMService>(named("claude")) { ClaudeService(get(named("claude")), get()) }
-    single<LLMService>(named("deepseek")) { DeepSeekService(get(named("deepseek")), get()) }
-    single<List<LLMService>> { listOf(get(named("claude")), get(named("deepseek"))) }
-
     // MCP Client
     single<MCPClientManager> { createMCPClientManager() }
+
+    // LLM Services
+    single<LLMService>(named("claude")) { ClaudeService(get(named("claude")), get(), get()) }
+    single<LLMService>(named("deepseek")) { DeepSeekService(get(named("deepseek")), get()) }
+    single<List<LLMService>> { listOf(get(named("claude")), get(named("deepseek"))) }
 
     // Parsers
     factory { ContentBlockParser(get()) }
@@ -72,11 +73,11 @@ val appModule = module {
 
     // Repositories
     single<ConversationRepository> { ConversationRepository(get(), get(), get()) }
-    factory { SettingsRepository(get()) }
+    single { SettingsRepository(get()) }
 
     // Use Cases
     factory { GetWeatherUseCase(get()) }
-    factory { SendMessageUseCase(get(), get()) }
+    factory { SendMessageUseCase(get(), get(), get()) }
     factory { GetConversationUseCase(get()) }
     factory { ClearConversationUseCase(get()) }
     factory { CompactConversationUseCase(get(), get()) }
@@ -99,9 +100,15 @@ val appModule = module {
     factory { DisconnectMCPServerUseCase(get()) }
     factory { GetMcpServerCommandUseCase(get()) }
     factory { SetMcpServerCommandUseCase(get()) }
+    factory { GetMCPConnectionStateUseCase(get()) }
+    factory { AutoConnectMCPServerUseCase(get(), get()) }
 
     // ViewModels
     viewModel<ChatViewModel> { ChatViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    viewModel<SettingsViewModel> { SettingsViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    viewModel<CheckToolsViewModel> { CheckToolsViewModel(get(), get(), get()) }
+    viewModel<SettingsViewModel> {
+        SettingsViewModel(
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+            get(), get(), get(), get()
+        )
+    }
 }

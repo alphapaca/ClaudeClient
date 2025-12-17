@@ -2,6 +2,7 @@ package com.github.alphapaca.claudeclient.data.api.claude
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 @Serializable
 data class ClaudeMessageResponse(
@@ -18,7 +19,17 @@ data class ClaudeMessageResponse(
 @Serializable
 data class ClaudeContentBlock(
     val type: String,
-    val text: String
+    val text: String? = null,
+    // tool_use fields
+    val id: String? = null,
+    val name: String? = null,
+    val input: JsonObject? = null,
+    // tool_result fields
+    @SerialName("tool_use_id")
+    val toolUseId: String? = null,
+    val content: String? = null,
+    @SerialName("is_error")
+    val isError: Boolean? = null,
 )
 
 @Serializable

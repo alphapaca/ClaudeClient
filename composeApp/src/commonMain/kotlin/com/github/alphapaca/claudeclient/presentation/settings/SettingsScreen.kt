@@ -1,5 +1,6 @@
 package com.github.alphapaca.claudeclient.presentation.settings
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -7,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -14,10 +17,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -29,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.github.alphapaca.claudeclient.data.mcp.MCPTool
 import com.github.alphapaca.claudeclient.domain.model.LLMModel
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -37,7 +46,6 @@ import org.koin.compose.viewmodel.koinViewModel
 fun SettingsScreen(
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
-    onCheckToolsClick: (command: String) -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val systemPrompt by viewModel.systemPrompt.collectAsState()
@@ -45,6 +53,10 @@ fun SettingsScreen(
     val maxTokens by viewModel.maxTokens.collectAsState()
     val selectedModel by viewModel.selectedModel.collectAsState()
     val mcpServerCommand by viewModel.mcpServerCommand.collectAsState()
+    val isMcpConnected by viewModel.isMcpConnected.collectAsState()
+    val isMcpConnecting by viewModel.isMcpConnecting.collectAsState()
+    val mcpConnectionError by viewModel.mcpConnectionError.collectAsState()
+    val mcpTools by viewModel.mcpTools.collectAsState()
 
     Column(
         modifier = modifier.fillMaxSize()
@@ -85,25 +97,19 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "MCP Server Command",
-                style = MaterialTheme.typography.labelMedium,
+
+            // MCP Server Section
+            McpServerSection(
+                command = mcpServerCommand,
+                onCommandChange = viewModel::onMcpServerCommandChange,
+                isConnected = isMcpConnected,
+                isConnecting = isMcpConnecting,
+                connectionError = mcpConnectionError,
+                tools = mcpTools,
+                onConnectClick = viewModel::connectMcpServer,
+                onDisconnectClick = viewModel::disconnectMcpServer,
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = mcpServerCommand,
-                onValueChange = viewModel::onMcpServerCommandChange,
-                label = { Text("Command (e.g., npx -y @modelcontextprotocol/server-weather)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(
-                onClick = { onCheckToolsClick(mcpServerCommand) },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Check Tools")
-            }
+
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "Model",
@@ -143,6 +149,125 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("Save")
+            }
+        }
+    }
+}
+
+@Composable
+private fun McpServerSection(
+    command: String,
+    onCommandChange: (String) -> Unit,
+    isConnected: Boolean,
+    isConnecting: Boolean,
+    connectionError: String?,
+    tools: List<MCPTool>,
+    onConnectClick: () -> Unit,
+    onDisconnectClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = "MCP Server",
+            style = MaterialTheme.typography.labelMedium,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = command,
+            onValueChange = onCommandChange,
+            label = { Text("Command (e.g., npx -y @modelcontextprotocol/server-weather)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            enabled = !isConnected && !isConnecting,
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            if (isConnected) {
+                OutlinedButton(
+                    onClick = onDisconnectClick,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    ),
+                ) {
+                    Text("Disconnect")
+                }
+            } else {
+                Button(
+                    onClick = onConnectClick,
+                    modifier = Modifier.weight(1f),
+                    enabled = command.isNotBlank() && !isConnecting,
+                ) {
+                    if (isConnecting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Connecting...")
+                    } else {
+                        Text("Connect")
+                    }
+                }
+            }
+        }
+
+        // Connection status
+        if (isConnected) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text(
+                        text = "Connected",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                    if (tools.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "${tools.size} tool(s) available:",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                        tools.forEach { tool ->
+                            Text(
+                                text = "• ${tool.name}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Error message
+        if (connectionError != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                ),
+            ) {
+                Text(
+                    text = connectionError,
+                    modifier = Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                )
             }
         }
     }
