@@ -1,13 +1,14 @@
 CREATE TABLE Conversation (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id TEXT PRIMARY KEY NOT NULL,
     name TEXT NOT NULL,
     createdAt INTEGER NOT NULL,
-    updatedAt INTEGER NOT NULL
+    updatedAt INTEGER NOT NULL,
+    unreadCount INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE Message (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    conversationId INTEGER NOT NULL,
+    conversationId TEXT NOT NULL,
     position INTEGER NOT NULL,
     type TEXT NOT NULL,
     content TEXT NOT NULL,
@@ -35,10 +36,7 @@ getMostRecentConversation:
 SELECT * FROM Conversation ORDER BY updatedAt DESC LIMIT 1;
 
 insertConversation:
-INSERT INTO Conversation(name, createdAt, updatedAt) VALUES (?, ?, ?);
-
-lastInsertRowId:
-SELECT last_insert_rowid();
+INSERT INTO Conversation(id, name, createdAt, updatedAt, unreadCount) VALUES (?, ?, ?, ?, 0);
 
 updateConversationTimestamp:
 UPDATE Conversation SET updatedAt = ? WHERE id = ?;
@@ -51,6 +49,12 @@ DELETE FROM Conversation WHERE id = ?;
 
 getConversationCount:
 SELECT COUNT(*) FROM Conversation;
+
+incrementUnreadCount:
+UPDATE Conversation SET unreadCount = unreadCount + 1 WHERE id = ?;
+
+resetUnreadCount:
+UPDATE Conversation SET unreadCount = 0 WHERE id = ?;
 
 -- Message queries
 getMessagesByConversationId:

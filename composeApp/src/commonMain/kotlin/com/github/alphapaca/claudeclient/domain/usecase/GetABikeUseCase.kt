@@ -3,7 +3,7 @@ package com.github.alphapaca.claudeclient.domain.usecase
 class GetABikeUseCase(
     private val sendMessageUseCase: SendMessageUseCase,
 ) {
-    suspend operator fun invoke(conversationId: Long): Long {
+    suspend operator fun invoke(conversationId: String?): String {
         return sendMessageUseCase(
             conversationId,
             """

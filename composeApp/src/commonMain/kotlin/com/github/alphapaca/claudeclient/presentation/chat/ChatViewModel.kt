@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import com.github.alphapaca.claudeclient.domain.model.Conversation
 import com.github.alphapaca.claudeclient.domain.model.ConversationInfo
+import com.github.alphapaca.claudeclient.domain.model.ConversationItem
 import com.github.alphapaca.claudeclient.domain.usecase.ClearConversationUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.CompactConversationUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.DeleteConversationUseCase
@@ -14,6 +15,7 @@ import com.github.alphapaca.claudeclient.domain.usecase.GetConversationUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetMostRecentConversationIdUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetTemperatureFlowUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetWeatherUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.ResetUnreadCountUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SendMessageUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetSystemPromptUseCase
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -41,15 +43,29 @@ class ChatViewModel(
     private val getConversationUseCase: GetConversationUseCase,
     private val getAllConversationsUseCase: GetAllConversationsUseCase,
     private val getMostRecentConversationIdUseCase: GetMostRecentConversationIdUseCase,
+    private val resetUnreadCountUseCase: ResetUnreadCountUseCase,
     getTemperatureFlowUseCase: GetTemperatureFlowUseCase,
 ) : ViewModel() {
 
-    private val _currentConversationId = MutableStateFlow(NEW_CONVERSATION_ID)
-    val currentConversationId: StateFlow<Long> = _currentConversationId.asStateFlow()
+    private val _currentConversationId = MutableStateFlow<String?>(null)
+    val currentConversationId: StateFlow<String?> = _currentConversationId.asStateFlow()
+
+    val conversations: Flow<List<ConversationInfo>> = getAllConversationsUseCase()
 
     init {
         viewModelScope.launch {
-            _currentConversationId.value = getMostRecentConversationIdUseCase() ?: NEW_CONVERSATION_ID
+            val conversationId = getMostRecentConversationIdUseCase()
+            _currentConversationId.value = conversationId
+        }
+        // Auto-reset unread count when viewing a conversation that has unread messages
+        viewModelScope.launch {
+            combine(conversations, _currentConversationId) { convList, currentId ->
+                currentId?.let { id ->
+                    convList.find { it.id == id }?.takeIf { it.unreadCount > 0 }
+                }
+            }.collect { conversationWithUnread ->
+                conversationWithUnread?.let { resetUnreadCountUseCase(it.id) }
+            }
         }
     }
 
@@ -65,8 +81,11 @@ class ChatViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    // Pending messages shown optimistically before DB confirms
+    private val _pendingMessages = MutableStateFlow<List<ConversationItem>>(emptyList())
+
     private val currentConversation = _currentConversationId.flatMapLatest { id ->
-        if (id == NEW_CONVERSATION_ID) {
+        if (id == null) {
             flowOf(Conversation(emptyList()))
         } else {
             getConversationUseCase(id)
@@ -75,10 +94,13 @@ class ChatViewModel(
 
     val chatItems: Flow<List<ChatItem>> = combine(
         currentConversation,
+        _pendingMessages,
         isLoading,
-    ) { conversation, isLoading ->
-        val mapped = conversation.items.map { ChatItem.Conversation(it) }
-        if (isLoading) mapped else mapped + suggests
+    ) { conversation, pendingMessages, isLoading ->
+        val dbItems = conversation.items.map { ChatItem.Conversation(it) }
+        val pendingItems = pendingMessages.map { ChatItem.Conversation(it) }
+        val allItems = dbItems + pendingItems
+        if (isLoading) allItems else allItems + suggests
     }
 
     val tokensUsed: Flow<Int> = currentConversation
@@ -89,41 +111,43 @@ class ChatViewModel(
 
     val temperature: Flow<Double?> = getTemperatureFlowUseCase()
 
-    val conversations: Flow<List<ConversationInfo>> = getAllConversationsUseCase()
-
     fun createNewConversation() {
-        if (_currentConversationId.value == NEW_CONVERSATION_ID) {
+        if (_currentConversationId.value == null) {
             return
         }
-        _currentConversationId.value = NEW_CONVERSATION_ID
+        _pendingMessages.value = emptyList()
+        _currentConversationId.value = null
     }
 
-    fun switchConversation(conversationId: Long) {
+    fun switchConversation(conversationId: String) {
         if (conversationId != _currentConversationId.value) {
+            _pendingMessages.value = emptyList()
             _currentConversationId.value = conversationId
+            // Unread count is auto-reset by the observer in init
         }
     }
 
     fun deleteCurrentConversation() {
-        val idToDelete = _currentConversationId.value
-        if (idToDelete == NEW_CONVERSATION_ID) {
-            return
-        }
+        val idToDelete = _currentConversationId.value ?: return
 
         viewModelScope.launch {
             deleteConversationUseCase(idToDelete)
             // Switch to another conversation or new conversation
             conversations.collect { list ->
-                _currentConversationId.value = list.firstOrNull()?.id ?: NEW_CONVERSATION_ID
+                _currentConversationId.value = list.firstOrNull()?.id
                 return@collect
             }
         }
     }
 
     fun sendMessage(userMessage: String) {
+        val isNewConversation = _currentConversationId.value == null
+
+        // Don't use optimistic UI - the DB flow updates fast enough
+        // and using pending messages causes duplication issues
         launchWithLoading {
             val conversationId = sendMessageUseCase(_currentConversationId.value, userMessage)
-            if (_currentConversationId.value == NEW_CONVERSATION_ID) {
+            if (isNewConversation) {
                 _currentConversationId.value = conversationId
             }
         }
@@ -133,13 +157,13 @@ class ChatViewModel(
         when (suggest) {
             ChatItem.Suggest.GetWeather -> launchWithLoading {
                 val conversationId = getWeatherUseCase(_currentConversationId.value)
-                if (_currentConversationId.value == NEW_CONVERSATION_ID) {
+                if (_currentConversationId.value == null) {
                     _currentConversationId.value = conversationId
                 }
             }
             ChatItem.Suggest.GetABike -> launchWithLoading {
                 val conversationId = getABikeUseCase(_currentConversationId.value)
-                if (_currentConversationId.value == NEW_CONVERSATION_ID) {
+                if (_currentConversationId.value == null) {
                     _currentConversationId.value = conversationId
                 }
             }
@@ -167,15 +191,17 @@ class ChatViewModel(
     }
 
     fun clearMessages() {
+        val conversationId = _currentConversationId.value ?: return
         viewModelScope.launch {
-            clearConversationUseCase(_currentConversationId.value)
+            clearConversationUseCase(conversationId)
             _error.value = null
         }
     }
 
     fun compactConversation() {
+        val conversationId = _currentConversationId.value ?: return
         launchWithLoading {
-            compactConversationUseCase(_currentConversationId.value)
+            compactConversationUseCase(conversationId)
         }
     }
 
@@ -189,8 +215,6 @@ class ChatViewModel(
     }
 
     companion object {
-        const val NEW_CONVERSATION_ID = -1L
-
         private val suggests = ChatItem.SuggestGroup(
             ChatItem.Suggest.entries
         )

@@ -2,10 +2,10 @@ package com.github.alphapaca.claudeclient.domain.usecase
 
 import com.github.alphapaca.claudeclient.data.repository.ConversationRepository
 
-class ClearConversationUseCase(
+class ResetUnreadCountUseCase(
     private val conversationRepository: ConversationRepository,
 ) {
     suspend operator fun invoke(conversationId: String) {
-        conversationRepository.clearConversation(conversationId)
+        conversationRepository.resetUnreadCount(conversationId)
     }
 }

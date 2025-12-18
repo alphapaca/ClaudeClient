@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -73,7 +74,7 @@ fun ChatScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     val conversations by viewModel.conversations.collectAsState(emptyList())
-    val currentConversationId by viewModel.currentConversationId.collectAsState(-1L)
+    val currentConversationId by viewModel.currentConversationId.collectAsState()
 
     var inputText by remember { mutableStateOf("") }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -122,9 +123,9 @@ fun ChatScreen(
 @Composable
 private fun ConversationDrawerContent(
     conversations: List<ConversationInfo>,
-    currentConversationId: Long,
+    currentConversationId: String?,
     onNewConversation: () -> Unit,
-    onConversationSelected: (Long) -> Unit,
+    onConversationSelected: (String) -> Unit,
 ) {
     ModalDrawerSheet {
         Text(
@@ -152,6 +153,11 @@ private fun ConversationDrawerContent(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
+                    },
+                    badge = {
+                        if (conversation.unreadCount > 0) {
+                            Badge { Text(conversation.unreadCount.toString()) }
+                        }
                     },
                     selected = conversation.id == currentConversationId,
                     onClick = { onConversationSelected(conversation.id) },

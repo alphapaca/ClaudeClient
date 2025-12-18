@@ -172,6 +172,6 @@ class SettingsViewModel(
     companion object {
         private const val TAG = "SettingsViewModel"
         const val MCP_SERVER_NAME = "mcp-server"
-        private val DEFAULT_MCP_COMMAND = "java -jar ${BuildConfig.HN_MCP_JAR_PATH}"
+        private val DEFAULT_MCP_COMMAND = "java -jar ${BuildConfig.MCP_SERVER_JAR_PATH}"
     }
 }

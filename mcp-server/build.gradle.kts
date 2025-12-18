@@ -21,6 +21,9 @@ dependencies {
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
 
+    // SQLite for reminders persistence
+    implementation(libs.sqlite.jdbc)
+
     // Logging
     implementation(libs.logback.classic)
 
@@ -43,6 +46,6 @@ tasks.jar {
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-    archiveBaseName.set("hn-mcp")
+    archiveBaseName.set("mcp-server")
     archiveClassifier.set("all")
 }

@@ -13,6 +13,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.github.alphapaca.claudeclient.di.appModule
 import com.github.alphapaca.claudeclient.domain.usecase.AutoConnectMCPServerUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.ObserveReminderNotificationsUseCase
 import com.github.alphapaca.claudeclient.presentation.chat.ChatScreen
 import com.github.alphapaca.claudeclient.presentation.navigation.ChatKey
 import com.github.alphapaca.claudeclient.presentation.navigation.SettingsKey
@@ -32,6 +33,18 @@ fun App(platformModule: Module) {
         val autoConnectMCPServerUseCase = koinInject<AutoConnectMCPServerUseCase>()
         LaunchedEffect(Unit) {
             autoConnectMCPServerUseCase()
+        }
+
+        // Observe reminder notifications and show system notifications
+        val observeReminderNotificationsUseCase = koinInject<ObserveReminderNotificationsUseCase>()
+        LaunchedEffect(Unit) {
+            co.touchlab.kermit.Logger.i("App") { "Starting to observe reminder notifications..." }
+            observeReminderNotificationsUseCase().collect { notification ->
+                co.touchlab.kermit.Logger.i("App") { "Received reminder notification: ${notification.reminderId} - ${notification.message}" }
+                // Show the actual reminder message in the notification
+                val displayMessage = notification.message ?: "Reminder #${notification.reminderId}"
+                observeReminderNotificationsUseCase.showNotification(displayMessage)
+            }
         }
 
         Scaffold(modifier = Modifier.Companion.imePadding().fillMaxSize()) { innerPadding ->

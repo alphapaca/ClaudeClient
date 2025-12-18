@@ -5,7 +5,7 @@ import com.github.alphapaca.claudeclient.data.repository.ConversationRepository
 class DeleteConversationUseCase(
     private val conversationRepository: ConversationRepository,
 ) {
-    suspend operator fun invoke(conversationId: Long) {
+    suspend operator fun invoke(conversationId: String) {
         conversationRepository.deleteConversation(conversationId)
     }
 }

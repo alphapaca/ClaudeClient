@@ -33,4 +33,4 @@ plugins {
 }
 
 include(":composeApp")
-include(":hn-mcp")
+include(":mcp-server")

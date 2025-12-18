@@ -28,6 +28,7 @@ markdownRenderer = "0.38.1"
 okhttp = "5.3.0"
 sqldelight = "2.2.1"
 mcp-sdk = "0.8.1"
+sqlite-jdbc = "3.47.2.0"
 
 [libraries]
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
@@ -62,6 +63,7 @@ sqldelight-coroutines = { module = "app.cash.sqldelight:coroutines-extensions", 
 sqldelight-driver-android = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
 sqldelight-driver-jvm = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
 mcp-kotlin-sdk = { module = "io.modelcontextprotocol:kotlin-sdk", version.ref = "mcp-sdk" }
+sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

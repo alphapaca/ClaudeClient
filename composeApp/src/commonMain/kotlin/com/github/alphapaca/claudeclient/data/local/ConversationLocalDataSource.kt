@@ -14,8 +14,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 import com.github.alphapaca.claudeclient.data.db.Conversation as DbConversation
 
+@OptIn(ExperimentalUuidApi::class)
 class ConversationLocalDataSource(
     private val database: ClaudeClientDatabase,
     private val contentBlockParser: ContentBlockParser,
@@ -29,7 +32,7 @@ class ConversationLocalDataSource(
             .map { list -> list.map { it.toConversationInfo() } }
     }
 
-    fun getConversationFlow(conversationId: Long): Flow<Conversation> {
+    fun getConversationFlow(conversationId: String): Flow<Conversation> {
         return queries.getMessagesByConversationId(conversationId)
             .asFlow()
             .mapToList(Dispatchers.IO)
@@ -38,22 +41,23 @@ class ConversationLocalDataSource(
             }
     }
 
-    suspend fun createConversation(name: String): Long = withContext(Dispatchers.IO) {
+    suspend fun createConversation(name: String): String = withContext(Dispatchers.IO) {
+        val id = Uuid.random().toString()
         val now = System.currentTimeMillis()
-        queries.insertConversation(name, now, now)
-        queries.lastInsertRowId().executeAsOne()
+        queries.insertConversation(id, name, now, now)
+        id
     }
 
-    suspend fun getMostRecentConversationId(): Long? = withContext(Dispatchers.IO) {
+    suspend fun getMostRecentConversationId(): String? = withContext(Dispatchers.IO) {
         queries.getMostRecentConversation().executeAsOneOrNull()?.id
     }
 
-    suspend fun deleteConversation(conversationId: Long) = withContext(Dispatchers.IO) {
+    suspend fun deleteConversation(conversationId: String) = withContext(Dispatchers.IO) {
         queries.deleteMessagesByConversationId(conversationId)
         queries.deleteConversation(conversationId)
     }
 
-    suspend fun saveMessage(conversationId: Long, position: Int, item: ConversationItem) = withContext(Dispatchers.IO) {
+    suspend fun saveMessage(conversationId: String, position: Int, item: ConversationItem) = withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
 
         when (item) {
@@ -109,13 +113,13 @@ class ConversationLocalDataSource(
         queries.updateConversationTimestamp(now, conversationId)
     }
 
-    suspend fun clearConversation(conversationId: Long) = withContext(Dispatchers.IO) {
+    suspend fun clearConversation(conversationId: String) = withContext(Dispatchers.IO) {
         queries.deleteMessagesByConversationId(conversationId)
         val now = System.currentTimeMillis()
         queries.updateConversationTimestamp(now, conversationId)
     }
 
-    suspend fun replaceConversationMessages(conversationId: Long, items: List<ConversationItem>) {
+    suspend fun replaceConversationMessages(conversationId: String, items: List<ConversationItem>) {
         withContext(Dispatchers.IO) {
             queries.deleteMessagesByConversationId(conversationId)
         }
@@ -146,11 +150,20 @@ class ConversationLocalDataSource(
         }
     }
 
+    suspend fun incrementUnreadCount(conversationId: String) = withContext(Dispatchers.IO) {
+        queries.incrementUnreadCount(conversationId)
+    }
+
+    suspend fun resetUnreadCount(conversationId: String) = withContext(Dispatchers.IO) {
+        queries.resetUnreadCount(conversationId)
+    }
+
     private fun DbConversation.toConversationInfo(): ConversationInfo {
         return ConversationInfo(
             id = id,
             name = name,
             updatedAt = updatedAt,
+            unreadCount = unreadCount.toInt(),
         )
     }
 

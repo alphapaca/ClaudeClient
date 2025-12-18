@@ -150,17 +150,17 @@ sqldelight {
     }
 }
 
-// Make run task depend on hn-mcp jar being built first
+// Make run task depend on mcp-server jar being built first
 afterEvaluate {
-    tasks.findByName("run")?.dependsOn(":hn-mcp:jar")
+    tasks.findByName("run")?.dependsOn(":mcp-server:jar")
 }
 
-// Helper to get the hn-mcp jar path for runtime usage
-val hnMcpJarPath: Provider<String> = provider {
-    project(":hn-mcp").tasks.named<Jar>("jar").get().archiveFile.get().asFile.absolutePath
+// Helper to get the mcp-server jar path for runtime usage
+val mcpServerJarPath: Provider<String> = provider {
+    project(":mcp-server").tasks.named<Jar>("jar").get().archiveFile.get().asFile.absolutePath
 }
 
-// Generate build config with hn-mcp jar path
+// Generate build config with mcp-server jar path
 buildConfig {
-    buildConfigField("HN_MCP_JAR_PATH", hnMcpJarPath)
+    buildConfigField("MCP_SERVER_JAR_PATH", mcpServerJarPath)
 }

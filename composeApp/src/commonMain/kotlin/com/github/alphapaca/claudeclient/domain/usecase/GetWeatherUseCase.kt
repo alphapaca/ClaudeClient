@@ -5,7 +5,7 @@ import com.github.alphapaca.claudeclient.domain.model.ConversationItem
 class GetWeatherUseCase(
     private val sendMessageUseCase: SendMessageUseCase,
 ) {
-    suspend operator fun invoke(conversationId: Long): Long {
+    suspend operator fun invoke(conversationId: String?): String {
         val weatherConditionsList = ConversationItem.ContentBlock.WeatherData.Condition.entries
             .joinToString(separator = ", ")
         return sendMessageUseCase(

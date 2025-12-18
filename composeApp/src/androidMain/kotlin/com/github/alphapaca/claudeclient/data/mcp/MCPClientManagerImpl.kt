@@ -1,7 +1,10 @@
 package com.github.alphapaca.claudeclient.data.mcp
 
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class MCPClientManagerImpl : MCPClientManager {
@@ -11,6 +14,9 @@ class MCPClientManagerImpl : MCPClientManager {
 
     private val _availableTools = MutableStateFlow<List<MCPTool>>(emptyList())
     override val availableTools: StateFlow<List<MCPTool>> = _availableTools.asStateFlow()
+
+    private val _reminderNotifications = MutableSharedFlow<ReminderNotification>()
+    override val reminderNotifications: SharedFlow<ReminderNotification> = _reminderNotifications.asSharedFlow()
 
     override suspend fun connectServer(config: MCPServerConfig): Result<Unit> {
         return Result.failure(UnsupportedOperationException("MCP servers are not supported on Android"))

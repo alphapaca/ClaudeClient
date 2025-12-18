@@ -13,8 +13,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlin.time.measureTimedValue
 
-private const val NEW_CONVERSATION_ID = -1L
-
 class ConversationRepository(
     private val llmServices: List<LLMService>,
     private val contentBlockParser: ContentBlockParser,
@@ -24,33 +22,33 @@ class ConversationRepository(
         return localDataSource.getAllConversationsFlow()
     }
 
-    fun getConversation(conversationId: Long): Flow<Conversation> {
+    fun getConversation(conversationId: String): Flow<Conversation> {
         return localDataSource.getConversationFlow(conversationId)
     }
 
-    suspend fun getMostRecentConversationId(): Long? {
+    suspend fun getMostRecentConversationId(): String? {
         return localDataSource.getMostRecentConversationId()
     }
 
-    suspend fun deleteConversation(conversationId: Long) {
+    suspend fun deleteConversation(conversationId: String) {
         localDataSource.deleteConversation(conversationId)
     }
 
     /**
      * Sends a message to the conversation.
-     * If conversationId is NEW_CONVERSATION_ID (-1), creates a new conversation.
+     * If conversationId is null, creates a new conversation.
      * @return the actual conversationId used (may be newly created)
      */
     suspend fun sendMessage(
-        conversationId: Long,
+        conversationId: String?,
         message: String,
         model: LLMModel,
         systemPrompt: String,
         temperature: Double?,
         maxTokens: Int,
         tools: List<MCPTool> = emptyList(),
-    ): Long {
-        val actualConversationId = if (conversationId == NEW_CONVERSATION_ID) {
+    ): String {
+        val actualConversationId = if (conversationId == null) {
             val name = generateConversationName(message)
             localDataSource.createConversation(name)
         } else {
@@ -92,15 +90,23 @@ class ConversationRepository(
         Logger.d(TAG) { "Saving assistant message with ${assistantMessage.content.size} content blocks" }
         localDataSource.saveMessage(actualConversationId, messagesForApi.size, assistantMessage)
         Logger.d(TAG) { "Message saved to conversation $actualConversationId" }
+
+        // Always increment unread count - UI will reset if conversation is being viewed
+        localDataSource.incrementUnreadCount(actualConversationId)
+
         return actualConversationId
     }
 
-    suspend fun clearConversation(conversationId: Long) {
+    suspend fun clearConversation(conversationId: String) {
         localDataSource.clearConversation(conversationId)
     }
 
+    suspend fun resetUnreadCount(conversationId: String) {
+        localDataSource.resetUnreadCount(conversationId)
+    }
+
     suspend fun compactConversation(
-        conversationId: Long,
+        conversationId: String,
         model: LLMModel,
         systemPrompt: String,
         temperature: Double?,

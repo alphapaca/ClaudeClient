@@ -5,6 +5,8 @@ import com.github.alphapaca.claudeclient.data.api.DeepSeekApiClientFactory
 import com.github.alphapaca.claudeclient.data.local.ConversationLocalDataSource
 import com.github.alphapaca.claudeclient.data.mcp.MCPClientManager
 import com.github.alphapaca.claudeclient.data.mcp.createMCPClientManager
+import com.github.alphapaca.claudeclient.data.notification.NotificationService
+import com.github.alphapaca.claudeclient.data.notification.createNotificationService
 import com.github.alphapaca.claudeclient.data.parser.ContentBlockParser
 import com.github.alphapaca.claudeclient.data.repository.ConversationRepository
 import com.github.alphapaca.claudeclient.data.repository.SettingsRepository
@@ -31,6 +33,8 @@ import com.github.alphapaca.claudeclient.domain.usecase.GetSystemPromptUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetTemperatureFlowUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetTemperatureUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetWeatherUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.ObserveReminderNotificationsUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.ResetUnreadCountUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SendMessageUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetMaxTokensUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetMcpServerCommandUseCase
@@ -59,6 +63,9 @@ val appModule = module {
 
     // MCP Client
     single<MCPClientManager> { createMCPClientManager() }
+
+    // Notification Service
+    single<NotificationService> { createNotificationService() }
 
     // LLM Services
     single<LLMService>(named("claude")) { ClaudeService(get(named("claude")), get(), get()) }
@@ -102,9 +109,11 @@ val appModule = module {
     factory { SetMcpServerCommandUseCase(get()) }
     factory { GetMCPConnectionStateUseCase(get()) }
     factory { AutoConnectMCPServerUseCase(get(), get()) }
+    factory { ResetUnreadCountUseCase(get()) }
+    factory { ObserveReminderNotificationsUseCase(get(), get()) }
 
     // ViewModels
-    viewModel<ChatViewModel> { ChatViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel<ChatViewModel> { ChatViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel<SettingsViewModel> {
         SettingsViewModel(
             get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
