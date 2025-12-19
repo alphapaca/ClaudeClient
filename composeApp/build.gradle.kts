@@ -150,9 +150,9 @@ sqldelight {
     }
 }
 
-// Make run task depend on mcp-server jar being built first
+// Make run task depend on mcp-server jars being built first
 afterEvaluate {
-    tasks.findByName("run")?.dependsOn(":mcp-server:jar")
+    tasks.findByName("run")?.dependsOn(":mcp-server:jar", ":recipe-book-mcp:jar")
 }
 
 // Helper to get the mcp-server jar path for runtime usage
@@ -160,7 +160,13 @@ val mcpServerJarPath: Provider<String> = provider {
     project(":mcp-server").tasks.named<Jar>("jar").get().archiveFile.get().asFile.absolutePath
 }
 
-// Generate build config with mcp-server jar path
+// Helper to get the recipe-book-mcp jar path for runtime usage
+val recipeBookMcpJarPath: Provider<String> = provider {
+    project(":recipe-book-mcp").tasks.named<Jar>("jar").get().archiveFile.get().asFile.absolutePath
+}
+
+// Generate build config with mcp-server jar paths
 buildConfig {
     buildConfigField("MCP_SERVER_JAR_PATH", mcpServerJarPath)
+    buildConfigField("RECIPE_BOOK_MCP_JAR_PATH", recipeBookMcpJarPath)
 }

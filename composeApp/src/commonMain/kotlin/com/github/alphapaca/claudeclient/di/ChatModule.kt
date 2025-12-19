@@ -13,6 +13,7 @@ import com.github.alphapaca.claudeclient.data.repository.SettingsRepository
 import com.github.alphapaca.claudeclient.data.service.ClaudeService
 import com.github.alphapaca.claudeclient.data.service.DeepSeekService
 import com.github.alphapaca.claudeclient.data.service.LLMService
+import com.github.alphapaca.claudeclient.domain.usecase.AddMcpServerUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.AutoConnectMCPServerUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.CallMCPToolUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.ClearConversationUseCase
@@ -23,10 +24,9 @@ import com.github.alphapaca.claudeclient.domain.usecase.DisconnectMCPServerUseCa
 import com.github.alphapaca.claudeclient.domain.usecase.GetABikeUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetAllConversationsUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetConversationUseCase
-import com.github.alphapaca.claudeclient.domain.usecase.GetMCPConnectionStateUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetMCPToolsUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetMaxTokensUseCase
-import com.github.alphapaca.claudeclient.domain.usecase.GetMcpServerCommandUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.GetMcpServersUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetModelUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetMostRecentConversationIdUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetSystemPromptUseCase
@@ -34,10 +34,10 @@ import com.github.alphapaca.claudeclient.domain.usecase.GetTemperatureFlowUseCas
 import com.github.alphapaca.claudeclient.domain.usecase.GetTemperatureUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetWeatherUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.ObserveReminderNotificationsUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.RemoveMcpServerUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.ResetUnreadCountUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SendMessageUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetMaxTokensUseCase
-import com.github.alphapaca.claudeclient.domain.usecase.SetMcpServerCommandUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetModelUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetSystemPromptUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetTemperatureUseCase
@@ -105,9 +105,9 @@ val appModule = module {
     factory { CallMCPToolUseCase(get()) }
     factory { ConnectMCPServerUseCase(get()) }
     factory { DisconnectMCPServerUseCase(get()) }
-    factory { GetMcpServerCommandUseCase(get()) }
-    factory { SetMcpServerCommandUseCase(get()) }
-    factory { GetMCPConnectionStateUseCase(get()) }
+    factory { GetMcpServersUseCase(get()) }
+    factory { AddMcpServerUseCase(get()) }
+    factory { RemoveMcpServerUseCase(get(), get()) }
     factory { AutoConnectMCPServerUseCase(get(), get()) }
     factory { ResetUnreadCountUseCase(get()) }
     factory { ObserveReminderNotificationsUseCase(get(), get()) }
@@ -117,7 +117,7 @@ val appModule = module {
     viewModel<SettingsViewModel> {
         SettingsViewModel(
             get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
-            get(), get(), get(), get()
+            get(), get(), get(), get(), get()
         )
     }
 }

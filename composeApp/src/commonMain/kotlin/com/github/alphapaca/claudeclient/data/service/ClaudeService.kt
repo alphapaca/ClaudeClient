@@ -120,13 +120,9 @@ class ClaudeService(
                         continue
                     }
 
-                    // Convert JsonObject to Map<String, Any?>
+                    // Convert JsonObject to Map<String, Any?> preserving structure
                     val arguments = toolInput.mapValues { (_, value) ->
-                        when {
-                            value is kotlinx.serialization.json.JsonPrimitive && value.isString -> value.content
-                            value is kotlinx.serialization.json.JsonPrimitive -> value.content
-                            else -> value.toString()
-                        }
+                        convertJsonElement(value)
                     }
 
                     val result = mcpClientManager.callTool(mcpTool.serverName, toolName, arguments)
@@ -217,6 +213,27 @@ class ClaudeService(
                 required = inputSchemaRequired,
             ),
         )
+    }
+
+    /**
+     * Recursively converts a JsonElement to its corresponding Kotlin type.
+     * Preserves arrays and objects structure for proper MCP tool argument passing.
+     */
+    private fun convertJsonElement(element: kotlinx.serialization.json.JsonElement): Any? {
+        return when (element) {
+            is kotlinx.serialization.json.JsonNull -> null
+            is kotlinx.serialization.json.JsonPrimitive -> {
+                when {
+                    element.isString -> element.content
+                    element.content == "true" -> true
+                    element.content == "false" -> false
+                    element.content.contains('.') -> element.content.toDoubleOrNull() ?: element.content
+                    else -> element.content.toLongOrNull() ?: element.content
+                }
+            }
+            is kotlinx.serialization.json.JsonArray -> element.map { convertJsonElement(it) }
+            is kotlinx.serialization.json.JsonObject -> element.mapValues { convertJsonElement(it.value) }
+        }
     }
 
     private companion object {

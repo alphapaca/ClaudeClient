@@ -8,7 +8,7 @@ ANTHROPIC_API_KEY=sk-ant-api03-...
 DEEPSEEK_API_KEY=sk-...
 ```
 
-Для сборки вместе с mcp сервером который будет по дефолту использоваться в app:
+Для сборки вместе с mcp серверами которые будут по дефолту использоваться в app:
 ```shell
 ./gradlew :composeApp:run
 ```

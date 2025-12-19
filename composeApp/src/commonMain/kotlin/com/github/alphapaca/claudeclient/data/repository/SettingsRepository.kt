@@ -2,13 +2,16 @@ package com.github.alphapaca.claudeclient.data.repository
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.github.alphapaca.claudeclient.data.mcp.MCPServerConfig
 import com.github.alphapaca.claudeclient.domain.model.LLMModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.Json
 
 
 class SettingsRepository(
@@ -82,6 +85,52 @@ class SettingsRepository(
         }
     }
 
+    suspend fun getMcpServers(): List<MCPServerConfig> {
+        val json = dataStore.data.first().toPreferences()[mcpServersKey].orEmpty()
+        return if (json.isBlank()) emptyList()
+        else runCatching { Json.decodeFromString<List<MCPServerConfig>>(json) }.getOrElse { emptyList() }
+    }
+
+    fun getMcpServersFlow(): Flow<List<MCPServerConfig>> {
+        return dataStore.data.map { preferences ->
+            val json = preferences[mcpServersKey].orEmpty()
+            if (json.isBlank()) emptyList()
+            else runCatching { Json.decodeFromString<List<MCPServerConfig>>(json) }.getOrElse { emptyList() }
+        }
+    }
+
+    suspend fun setMcpServers(servers: List<MCPServerConfig>) {
+        dataStore.updateData {
+            it.toMutablePreferences().also { preferences ->
+                preferences[mcpServersKey] = Json.encodeToString(servers)
+            }
+        }
+    }
+
+    suspend fun addMcpServer(server: MCPServerConfig) {
+        val current = getMcpServers().toMutableList()
+        current.removeAll { it.name == server.name }
+        current.add(server)
+        setMcpServers(current)
+    }
+
+    suspend fun removeMcpServer(serverName: String) {
+        val current = getMcpServers().filter { it.name != serverName }
+        setMcpServers(current)
+    }
+
+    suspend fun isMcpServersInitialized(): Boolean {
+        return dataStore.data.first().toPreferences()[mcpServersInitializedKey] == true
+    }
+
+    suspend fun setMcpServersInitialized() {
+        dataStore.updateData {
+            it.toMutablePreferences().also { preferences ->
+                preferences[mcpServersInitializedKey] = true
+            }
+        }
+    }
+
     private companion object {
         const val DEFAULT_MAX_TOKENS = 1024
         val systemPromptKey = stringPreferencesKey("system_prompt")
@@ -89,5 +138,7 @@ class SettingsRepository(
         val modelKey = stringPreferencesKey("model")
         val maxTokensKey = intPreferencesKey("max_tokens")
         val mcpServerCommandKey = stringPreferencesKey("mcp_server_command")
+        val mcpServersKey = stringPreferencesKey("mcp_servers")
+        val mcpServersInitializedKey = booleanPreferencesKey("mcp_servers_initialized")
     }
 }
