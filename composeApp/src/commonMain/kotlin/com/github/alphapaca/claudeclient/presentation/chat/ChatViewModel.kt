@@ -117,12 +117,14 @@ class ChatViewModel(
         }
         _pendingMessages.value = emptyList()
         _currentConversationId.value = null
+        _error.value = null
     }
 
     fun switchConversation(conversationId: String) {
         if (conversationId != _currentConversationId.value) {
             _pendingMessages.value = emptyList()
             _currentConversationId.value = conversationId
+            _error.value = null
             // Unread count is auto-reset by the observer in init
         }
     }

@@ -35,3 +35,4 @@ plugins {
 include(":composeApp")
 include(":mcp-server")
 include(":recipe-book-mcp")
+include(":embedding-indexer")

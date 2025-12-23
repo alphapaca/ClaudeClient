@@ -12,3 +12,8 @@ DEEPSEEK_API_KEY=sk-...
 ```shell
 ./gradlew :composeApp:run
 ```
+
+Для запуска `embedding-indexer` нужно поместить VoyageAI api key в `local.properties`:
+```properties
+VOYAGEAI_API_KEY=pa-...
+```
