@@ -10,6 +10,12 @@ import java.nio.file.Files
 import java.sql.Connection
 import java.sql.DriverManager
 
+data class SearchResult(
+    val chunkId: Long,
+    val content: String,
+    val distance: Float,
+)
+
 class VectorStore(private val dbPath: String) : Closeable {
 
     private val logger = LoggerFactory.getLogger(VectorStore::class.java)
@@ -238,6 +244,40 @@ class VectorStore(private val dbPath: String) : Closeable {
             rs.next()
             return rs.getInt(1)
         }
+    }
+
+    fun searchSimilar(queryEmbedding: List<Float>, limit: Int = 5): List<SearchResult> {
+        val results = mutableListOf<SearchResult>()
+        val k = limit.coerceIn(1, 20)
+
+        connection.prepareStatement(
+            """
+            SELECT
+                chunks.id,
+                chunks.content,
+                chunks_vec.distance
+            FROM chunks_vec
+            JOIN chunks ON chunks.id = chunks_vec.chunk_id
+            WHERE embedding MATCH ? AND k = $k
+            ORDER BY distance
+            """.trimIndent()
+        ).use { stmt ->
+            stmt.setBytes(1, embeddingToBlob(queryEmbedding))
+
+            val rs = stmt.executeQuery()
+            while (rs.next()) {
+                results.add(
+                    SearchResult(
+                        chunkId = rs.getLong("id"),
+                        content = rs.getString("content"),
+                        distance = rs.getFloat("distance"),
+                    )
+                )
+            }
+        }
+
+        logger.debug("Found ${results.size} similar chunks")
+        return results
     }
 
     override fun close() {

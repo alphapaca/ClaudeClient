@@ -6,7 +6,8 @@ import java.io.File
 
 fun createDataStore(): DataStore<Preferences> = createDataStore(
     producePath = {
-        val file = File(System.getProperty("java.io.tmpdir"), dataStoreFileName)
-        file.absolutePath
+        val dir = File(System.getProperty("user.home"), ".claudeclient")
+        dir.mkdirs()
+        File(dir, dataStoreFileName).absolutePath
     }
 )

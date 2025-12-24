@@ -1,10 +1,12 @@
 package com.github.alphapaca.claudeclient.data.service
 
 import co.touchlab.kermit.Logger
+import com.github.alphapaca.claudeclient.data.api.claude.ClaudeCacheControl
 import com.github.alphapaca.claudeclient.data.api.claude.ClaudeMessageRequest
 import com.github.alphapaca.claudeclient.data.api.claude.ClaudeMessageResponse
 import com.github.alphapaca.claudeclient.data.api.claude.ClaudeRequestContentBlock
 import com.github.alphapaca.claudeclient.data.api.claude.ClaudeRequestMessage
+import com.github.alphapaca.claudeclient.data.api.claude.ClaudeSystemBlock
 import com.github.alphapaca.claudeclient.data.api.claude.ClaudeTool
 import com.github.alphapaca.claudeclient.data.api.claude.ClaudeToolInputSchema
 import com.github.alphapaca.claudeclient.data.mcp.MCPClientManager
@@ -53,7 +55,14 @@ class ClaudeService(
                 model = model.apiName,
                 maxTokens = maxTokens,
                 messages = conversationMessages,
-                system = systemPrompt?.takeIf { it.isNotBlank() },
+                system = systemPrompt?.takeIf { it.isNotBlank() }?.let { prompt ->
+                    listOf(
+                        ClaudeSystemBlock(
+                            text = prompt,
+                            cacheControl = ClaudeCacheControl(),
+                        )
+                    )
+                },
                 temperature = temperature,
                 tools = claudeTools,
             )
@@ -68,6 +77,13 @@ class ClaudeService(
             val responseDeserialized: ClaudeMessageResponse = response.body()
             totalInputTokens += responseDeserialized.usage.inputTokens
             totalOutputTokens += responseDeserialized.usage.outputTokens
+
+            // Log cache metrics
+            val cacheCreated = responseDeserialized.usage.cacheCreationInputTokens ?: 0
+            val cacheRead = responseDeserialized.usage.cacheReadInputTokens ?: 0
+            if (cacheCreated > 0 || cacheRead > 0) {
+                Logger.d(TAG) { "Cache: created=$cacheCreated tokens, read=$cacheRead tokens" }
+            }
 
             // Extract text content from this response
             val textParts = responseDeserialized.content

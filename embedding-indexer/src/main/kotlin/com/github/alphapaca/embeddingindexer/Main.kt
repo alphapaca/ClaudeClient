@@ -8,7 +8,7 @@ import java.util.Properties
 private val logger = LoggerFactory.getLogger("EmbeddingIndexer")
 
 // Hardcoded path to the text file to index
-private const val TEXT_FILE_PATH = "/path/to/text/sample.txt"
+private val TEXT_FILE_PATH = "/path/to/foundation.txt"
 
 // Database path
 private val DB_PATH = System.getProperty("user.home") + "/.embedding-indexer/vectors.db"
@@ -17,7 +17,7 @@ fun main(): Unit = runBlocking {
     logger.info("Starting Embedding Indexer")
 
     // 1. Load API key
-    val apiKey = loadApiKey()
+    val apiKey = loadEnvParameter("VOYAGEAI_API_KEY")
     logger.info("API key loaded")
 
     // 2. Read text file
@@ -65,9 +65,9 @@ fun main(): Unit = runBlocking {
     }
 }
 
-private fun loadApiKey(): String {
+fun loadEnvParameter(name: String): String {
     // 1. Try environment variable first
-    System.getenv("VOYAGEAI_API_KEY")?.let {
+    System.getenv(name)?.let {
         logger.debug("Using API key from environment variable")
         return it
     }
@@ -76,7 +76,7 @@ private fun loadApiKey(): String {
     val localPropsFile = File("local.properties")
     if (localPropsFile.exists()) {
         val props = Properties().apply { load(localPropsFile.inputStream()) }
-        props.getProperty("VOYAGEAI_API_KEY")?.let {
+        props.getProperty(name)?.let {
             logger.debug("Using API key from local.properties")
             return it
         }
@@ -86,7 +86,7 @@ private fun loadApiKey(): String {
     val homePropsFile = File(System.getProperty("user.home"), ".embedding-indexer/config.properties")
     if (homePropsFile.exists()) {
         val props = Properties().apply { load(homePropsFile.inputStream()) }
-        props.getProperty("VOYAGEAI_API_KEY")?.let {
+        props.getProperty(name)?.let {
             logger.debug("Using API key from ~/.embedding-indexer/config.properties")
             return it
         }
@@ -94,10 +94,10 @@ private fun loadApiKey(): String {
 
     throw IllegalStateException(
         """
-        VOYAGEAI_API_KEY not found. Set it via one of:
-        1. Environment variable: export VOYAGEAI_API_KEY=your_key
-        2. local.properties file: VOYAGEAI_API_KEY=your_key
-        3. ~/.embedding-indexer/config.properties: VOYAGEAI_API_KEY=your_key
+        $name not found. Set it via one of:
+        1. Environment variable: export $name=your_key
+        2. local.properties file: $name=your_key
+        3. ~/.embedding-indexer/config.properties: $name=your_key
         """.trimIndent()
     )
 }

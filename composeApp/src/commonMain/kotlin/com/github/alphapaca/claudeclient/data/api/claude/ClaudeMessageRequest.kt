@@ -17,9 +17,33 @@ data class ClaudeMessageRequest(
     @SerialName("max_tokens")
     val maxTokens: Int,
     val messages: List<ClaudeRequestMessage>,
-    val system: String? = null,
+    val system: List<ClaudeSystemBlock>? = null,
     val temperature: Double? = null,
     val tools: List<ClaudeTool>? = null,
+)
+
+/**
+ * System content block with optional cache control for 5-minute prompt caching.
+ */
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable
+data class ClaudeSystemBlock(
+    @EncodeDefault
+    val type: String = "text",
+    val text: String,
+    @SerialName("cache_control")
+    val cacheControl: ClaudeCacheControl? = null,
+)
+
+/**
+ * Cache control for Claude API prompt caching.
+ * TTL is 5 minutes (ephemeral caching).
+ */
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable
+data class ClaudeCacheControl(
+    @EncodeDefault
+    val type: String = "ephemeral",
 )
 
 /**

@@ -52,6 +52,12 @@ class AutoConnectMCPServerUseCase(
                 command = "java",
                 args = listOf("-jar", BuildConfig.RECIPE_BOOK_MCP_JAR_PATH),
             ),
+            MCPServerConfig(
+                name = "foundation-search",
+                command = "java",
+                args = listOf("-jar", BuildConfig.FOUNDATION_SEARCH_MCP_JAR_PATH),
+                env = mapOf("VOYAGEAI_API_KEY" to BuildConfig.VOYAGEAI_API_KEY),
+            ),
         )
 
         for (server in defaultServers) {

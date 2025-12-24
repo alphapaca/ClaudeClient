@@ -97,6 +97,7 @@ buildConfig {
     }
     buildConfigField("ANTHROPIC_API_KEY", localProperties["ANTHROPIC_API_KEY"] as String)
     buildConfigField("DEEPSEEK_API_KEY", localProperties["DEEPSEEK_API_KEY"] as String)
+    buildConfigField("VOYAGEAI_API_KEY", localProperties["VOYAGEAI_API_KEY"] as String)
 }
 
 android {
@@ -152,7 +153,7 @@ sqldelight {
 
 // Make run task depend on mcp-server jars being built first
 afterEvaluate {
-    tasks.findByName("run")?.dependsOn(":mcp-server:jar", ":recipe-book-mcp:jar")
+    tasks.findByName("run")?.dependsOn(":mcp-server:jar", ":recipe-book-mcp:jar", ":mcp-foundation-search:jar")
 }
 
 // Helper to get the mcp-server jar path for runtime usage
@@ -165,8 +166,14 @@ val recipeBookMcpJarPath: Provider<String> = provider {
     project(":recipe-book-mcp").tasks.named<Jar>("jar").get().archiveFile.get().asFile.absolutePath
 }
 
+// Helper to get the mcp-foundation-search jar path for runtime usage
+val foundationSearchMcpJarPath: Provider<String> = provider {
+    project(":mcp-foundation-search").tasks.named<Jar>("jar").get().archiveFile.get().asFile.absolutePath
+}
+
 // Generate build config with mcp-server jar paths
 buildConfig {
     buildConfigField("MCP_SERVER_JAR_PATH", mcpServerJarPath)
     buildConfigField("RECIPE_BOOK_MCP_JAR_PATH", recipeBookMcpJarPath)
+    buildConfigField("FOUNDATION_SEARCH_MCP_JAR_PATH", foundationSearchMcpJarPath)
 }
