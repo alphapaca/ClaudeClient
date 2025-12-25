@@ -95,6 +95,42 @@ class VoyageAIService(private val apiKey: String) {
         return results
     }
 
+    suspend fun rerank(
+        query: String,
+        documents: List<String>,
+        topK: Int? = null,
+    ): List<RerankResult> {
+        require(documents.isNotEmpty()) { "Documents list cannot be empty" }
+        require(documents.size <= MAX_RERANK_DOCUMENTS) { "Cannot rerank more than $MAX_RERANK_DOCUMENTS documents" }
+
+        val request = RerankRequest(
+            query = query,
+            documents = documents,
+            topK = topK,
+        )
+        val requestJson = json.encodeToString(RerankRequest.serializer(), request)
+        logger.debug("Rerank request: ${requestJson.take(300)}...")
+
+        val response = client.post(RERANK_URL) {
+            contentType(ContentType.Application.Json)
+            header("Authorization", "Bearer $apiKey")
+            setBody(requestJson)
+        }
+
+        val responseText = response.bodyAsText()
+        System.err.println("Rerank raw response: $responseText")
+
+        if (!response.status.isSuccess()) {
+            System.err.println("Rerank API error (${response.status}): $responseText")
+            throw RuntimeException("VoyageAI Rerank API error: ${response.status} - $responseText")
+        }
+
+        val rerankResponse: RerankResponse = json.decodeFromString(responseText)
+        System.err.println("Reranked ${documents.size} documents, used ${rerankResponse.tokenCount()} tokens")
+
+        return rerankResponse.resultsList()
+    }
+
     private suspend fun <T> retryWithBackoff(
         maxRetries: Int = 3,
         initialDelayMs: Long = 1000,
@@ -120,7 +156,9 @@ class VoyageAIService(private val apiKey: String) {
 
     companion object {
         private const val BASE_URL = "https://api.voyageai.com/v1/embeddings"
+        private const val RERANK_URL = "https://api.voyageai.com/v1/rerank"
         private const val MAX_BATCH_SIZE = 128
+        private const val MAX_RERANK_DOCUMENTS = 1000
         private const val BATCH_DELAY_MS = 100L
     }
 }

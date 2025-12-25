@@ -35,3 +35,40 @@ data class EmbeddingUsage(
     @SerialName("total_tokens")
     val totalTokens: Int,
 )
+
+// Reranking models
+@Serializable
+data class RerankRequest(
+    val query: String,
+    val documents: List<String>,
+    val model: String = "rerank-2",
+    @SerialName("top_k")
+    val topK: Int? = null,
+)
+
+@Serializable
+data class RerankResponse(
+    // Try both 'results' and 'data' field names
+    val results: List<RerankResult>? = null,
+    val data: List<RerankResult>? = null,
+    // Token count could be at top level or in usage object
+    @SerialName("total_tokens")
+    val totalTokens: Int? = null,
+    val usage: RerankUsage? = null,
+) {
+    fun resultsList(): List<RerankResult> = results ?: data ?: emptyList()
+    fun tokenCount(): Int = totalTokens ?: usage?.totalTokens ?: 0
+}
+
+@Serializable
+data class RerankUsage(
+    @SerialName("total_tokens")
+    val totalTokens: Int,
+)
+
+@Serializable
+data class RerankResult(
+    val index: Int,
+    @SerialName("relevance_score")
+    val relevanceScore: Float,
+)

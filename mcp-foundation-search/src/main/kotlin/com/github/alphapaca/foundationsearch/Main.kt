@@ -1,5 +1,6 @@
 package com.github.alphapaca.foundationsearch
 
+import com.github.alphapaca.embeddingindexer.SearchResult
 import com.github.alphapaca.embeddingindexer.VectorStore
 import com.github.alphapaca.embeddingindexer.VoyageAIService
 import com.github.alphapaca.embeddingindexer.loadEnvParameter
@@ -17,6 +18,7 @@ import kotlinx.io.asSink
 import kotlinx.io.asSource
 import kotlinx.io.buffered
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
@@ -68,6 +70,10 @@ fun main(): Unit = runBlocking {
                     put("type", JsonPrimitive("integer"))
                     put("description", JsonPrimitive("Number of passages to return (default: 5, max: 10)"))
                 })
+                put("rerank", buildJsonObject {
+                    put("type", JsonPrimitive("boolean"))
+                    put("description", JsonPrimitive("Whether to rerank results for better relevance (default: true)"))
+                })
             },
             required = listOf("query")
         )
@@ -83,33 +89,58 @@ fun main(): Unit = runBlocking {
             ?.coerceIn(1, 10)
             ?: 5
 
+        val shouldRerank = request.arguments?.get("rerank")
+            ?.jsonPrimitive?.booleanOrNull
+            ?: true
+
         try {
-            System.err.println("Searching for: $query (limit: $limit)")
+            System.err.println("Searching for: $query (limit: $limit, rerank: $shouldRerank)")
 
             // Get embedding for query
             val queryEmbeddings = voyageService.getEmbeddings(listOf(query))
             val queryEmbedding = queryEmbeddings.first()
 
             // Search for similar passages
-            val results = vectorStore.searchSimilar(queryEmbedding, limit)
+            val finalResults: List<Pair<SearchResult, Float>> = if (shouldRerank) {
+                // Fetch more candidates for reranking
+                val candidates = vectorStore.searchSimilar(queryEmbedding, limit = 20)
+                if (candidates.isEmpty()) {
+                    emptyList()
+                } else {
+                    System.err.println("Reranking ${candidates.size} candidates...")
+                    val rerankResults = voyageService.rerank(
+                        query = query,
+                        documents = candidates.map { it.content },
+                        topK = limit
+                    )
+                    // Map rerank results back to original candidates with relevance scores
+                    rerankResults.map { rr ->
+                        candidates[rr.index] to rr.relevanceScore
+                    }
+                }
+            } else {
+                // Use vector search results directly
+                vectorStore.searchSimilar(queryEmbedding, limit).map { it to (1f - it.distance) }
+            }
 
-            if (results.isEmpty()) {
+            if (finalResults.isEmpty()) {
                 return@addTool CallToolResult(
                     content = listOf(TextContent(text = "No relevant passages found for: $query"))
                 )
             }
 
-            val passages = results.mapIndexed { index, result ->
+            val passages = finalResults.mapIndexed { index, (result, score) ->
                 """
-                |--- Passage ${index + 1} (relevance: ${String.format("%.3f", 1 - result.distance)}) ---
+                |--- Passage ${index + 1} (relevance: ${String.format("%.3f", score)}) ---
                 |${result.content}
                 """.trimMargin()
             }.joinToString("\n\n")
 
+            val rerankNote = if (shouldRerank) " (reranked)" else ""
             CallToolResult(
                 content = listOf(
                     TextContent(
-                        text = """Found ${results.size} relevant passages from Foundation series:
+                        text = """Found ${finalResults.size} relevant passages from Foundation series$rerankNote:
                             |
                             |$passages
                             |
