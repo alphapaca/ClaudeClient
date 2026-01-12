@@ -131,7 +131,7 @@ fun main(): Unit = runBlocking {
 
             val passages = finalResults.mapIndexed { index, (result, score) ->
                 """
-                |--- Passage ${index + 1} (relevance: ${String.format("%.3f", score)}) ---
+                |--- Passage ${index + 1} (paragraph: ${result.paragraphNumber}, relevance: ${String.format("%.3f", score)}) ---
                 |${result.content}
                 """.trimMargin()
             }.joinToString("\n\n")

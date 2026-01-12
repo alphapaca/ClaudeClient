@@ -9,6 +9,7 @@ data class TextChunk(
     val content: String,
     val startOffset: Int,
     val endOffset: Int,
+    val paragraphNumber: Int = 0,
 )
 
 @Serializable

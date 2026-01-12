@@ -8,7 +8,7 @@ import java.util.Properties
 private val logger = LoggerFactory.getLogger("EmbeddingIndexer")
 
 // Hardcoded path to the text file to index
-private val TEXT_FILE_PATH = "/path/to/foundation.txt"
+private val TEXT_FILE_PATH = "/Users/mi/Documents/foundation.txt"
 
 // Database path
 private val DB_PATH = System.getProperty("user.home") + "/.embedding-indexer/vectors.db"
@@ -30,10 +30,14 @@ fun main(): Unit = runBlocking {
     val text = textFile.readText()
     logger.info("Read ${text.length} characters from ${textFile.name}")
 
-    // 3. Chunk by sentences
+    // 3. Chunk by paragraphs with overlap (better for RAG)
     val chunker = TextChunker()
-    val chunks = chunker.chunkBySentences(text)
-    logger.info("Created ${chunks.size} chunks")
+    val chunks = chunker.chunkByParagraphs(
+        text = text,
+        targetTokens = 400,      // ~400 tokens per chunk
+        overlapParagraphs = 1,   // 1 paragraph overlap between chunks
+    )
+    logger.info("Created ${chunks.size} chunks (paragraph-based with overlap)")
 
     if (chunks.isEmpty()) {
         logger.warn("No chunks to process")
@@ -52,8 +56,8 @@ fun main(): Unit = runBlocking {
 
         logger.info("Generated ${embeddings.size} embeddings (dimension: ${embeddings.firstOrNull()?.size ?: 0})")
 
-        // 5. Store in SQLite with sqlite-vec
-        VectorStore(DB_PATH).use { store ->
+        // 5. Store in SQLite with sqlite-vec (wipe existing database)
+        VectorStore(DB_PATH, wipeOnInit = true).use { store ->
             store.insertChunks(chunks.zip(embeddings))
             logger.info("Indexed ${store.getChunkCount()} total chunks in database")
         }

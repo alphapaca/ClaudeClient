@@ -14,9 +14,13 @@ data class SearchResult(
     val chunkId: Long,
     val content: String,
     val distance: Float,
+    val paragraphNumber: Int,
 )
 
-class VectorStore(private val dbPath: String) : Closeable {
+class VectorStore(
+    private val dbPath: String,
+    private val wipeOnInit: Boolean = false
+) : Closeable {
 
     private val logger = LoggerFactory.getLogger(VectorStore::class.java)
 
@@ -24,7 +28,11 @@ class VectorStore(private val dbPath: String) : Closeable {
         val dbFile = File(dbPath)
         dbFile.parentFile?.mkdirs()
 
-        val isNewDb = !dbFile.exists()
+        // Delete existing database to ensure fresh schema (only if requested)
+        if (wipeOnInit && dbFile.exists()) {
+            logger.info("Deleting existing database: $dbPath")
+            dbFile.delete()
+        }
 
         // Configure SQLite to enable extension loading
         val config = SQLiteConfig()
@@ -33,10 +41,7 @@ class VectorStore(private val dbPath: String) : Closeable {
         DriverManager.getConnection("jdbc:sqlite:$dbPath", config.toProperties()).also { conn ->
             // Load sqlite-vec extension
             loadSqliteVecExtension(conn)
-
-            if (isNewDb) {
-                initDatabase(conn)
-            }
+            initDatabase(conn)
         }
     }
 
@@ -114,6 +119,7 @@ class VectorStore(private val dbPath: String) : Closeable {
                     content TEXT NOT NULL,
                     start_offset INTEGER NOT NULL,
                     end_offset INTEGER NOT NULL,
+                    paragraph_number INTEGER NOT NULL DEFAULT 0,
                     created_at INTEGER NOT NULL
                 )
                 """.trimIndent()
@@ -147,14 +153,15 @@ class VectorStore(private val dbPath: String) : Closeable {
         // Insert chunk text
         connection.prepareStatement(
             """
-            INSERT INTO chunks (content, start_offset, end_offset, created_at)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO chunks (content, start_offset, end_offset, paragraph_number, created_at)
+            VALUES (?, ?, ?, ?, ?)
             """.trimIndent()
         ).use { stmt ->
             stmt.setString(1, chunk.content)
             stmt.setInt(2, chunk.startOffset)
             stmt.setInt(3, chunk.endOffset)
-            stmt.setLong(4, System.currentTimeMillis())
+            stmt.setInt(4, chunk.paragraphNumber)
+            stmt.setLong(5, System.currentTimeMillis())
             stmt.executeUpdate()
 
             // Get the generated ID
@@ -184,8 +191,8 @@ class VectorStore(private val dbPath: String) : Closeable {
         try {
             val chunkStmt = connection.prepareStatement(
                 """
-                INSERT INTO chunks (content, start_offset, end_offset, created_at)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO chunks (content, start_offset, end_offset, paragraph_number, created_at)
+                VALUES (?, ?, ?, ?, ?)
                 """.trimIndent()
             )
 
@@ -203,7 +210,8 @@ class VectorStore(private val dbPath: String) : Closeable {
                 chunkStmt.setString(1, chunk.content)
                 chunkStmt.setInt(2, chunk.startOffset)
                 chunkStmt.setInt(3, chunk.endOffset)
-                chunkStmt.setLong(4, now)
+                chunkStmt.setInt(4, chunk.paragraphNumber)
+                chunkStmt.setLong(5, now)
                 chunkStmt.executeUpdate()
 
                 // Get generated ID
@@ -255,6 +263,7 @@ class VectorStore(private val dbPath: String) : Closeable {
             SELECT
                 chunks.id,
                 chunks.content,
+                chunks.paragraph_number,
                 chunks_vec.distance
             FROM chunks_vec
             JOIN chunks ON chunks.id = chunks_vec.chunk_id
@@ -271,6 +280,7 @@ class VectorStore(private val dbPath: String) : Closeable {
                         chunkId = rs.getLong("id"),
                         content = rs.getString("content"),
                         distance = rs.getFloat("distance"),
+                        paragraphNumber = rs.getInt("paragraph_number"),
                     )
                 )
             }
