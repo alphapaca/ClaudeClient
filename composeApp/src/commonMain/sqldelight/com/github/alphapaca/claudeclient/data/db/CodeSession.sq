@@ -1,0 +1,82 @@
+-- Code Session table for storing indexed repository sessions
+CREATE TABLE CodeSession (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    repoPath TEXT NOT NULL,
+    dbPath TEXT NOT NULL,
+    indexedFileCount INTEGER NOT NULL DEFAULT 0,
+    indexedChunkCount INTEGER NOT NULL DEFAULT 0,
+    indexingStatus TEXT NOT NULL DEFAULT 'pending',
+    errorMessage TEXT,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL
+);
+
+-- Messages within a code session
+CREATE TABLE CodeSessionMessage (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sessionId TEXT NOT NULL REFERENCES CodeSession(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    content TEXT NOT NULL,
+    modelApiName TEXT,
+    inputTokens INTEGER,
+    outputTokens INTEGER,
+    inferenceTimeMs INTEGER,
+    stopReason TEXT,
+    createdAt INTEGER NOT NULL
+);
+
+CREATE INDEX code_session_message_session_id ON CodeSessionMessage(sessionId);
+CREATE INDEX code_session_message_position ON CodeSessionMessage(position);
+
+-- Queries for CodeSession
+
+getAllCodeSessions:
+SELECT id, name, repoPath, indexingStatus, updatedAt
+FROM CodeSession
+ORDER BY updatedAt DESC;
+
+getCodeSessionById:
+SELECT *
+FROM CodeSession
+WHERE id = ?;
+
+insertCodeSession:
+INSERT INTO CodeSession(id, name, repoPath, dbPath, indexedFileCount, indexedChunkCount, indexingStatus, errorMessage, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateIndexingStatus:
+UPDATE CodeSession
+SET indexingStatus = ?, indexedFileCount = ?, indexedChunkCount = ?, errorMessage = ?, updatedAt = ?
+WHERE id = ?;
+
+updateCodeSessionUpdatedAt:
+UPDATE CodeSession
+SET updatedAt = ?
+WHERE id = ?;
+
+deleteCodeSession:
+DELETE FROM CodeSession
+WHERE id = ?;
+
+-- Queries for CodeSessionMessage
+
+getMessagesBySessionId:
+SELECT *
+FROM CodeSessionMessage
+WHERE sessionId = ?
+ORDER BY position ASC;
+
+getMaxMessagePosition:
+SELECT MAX(position)
+FROM CodeSessionMessage
+WHERE sessionId = ?;
+
+insertCodeSessionMessage:
+INSERT INTO CodeSessionMessage(sessionId, position, type, content, modelApiName, inputTokens, outputTokens, inferenceTimeMs, stopReason, createdAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteMessagesBySessionId:
+DELETE FROM CodeSessionMessage
+WHERE sessionId = ?;

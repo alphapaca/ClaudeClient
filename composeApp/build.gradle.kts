@@ -87,6 +87,9 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
             implementation(libs.sqldelight.driver.jvm)
+            // For code session indexer
+            implementation(libs.sqlite.jdbc)
+            implementation(libs.ktor.client.cio)
         }
     }
 }

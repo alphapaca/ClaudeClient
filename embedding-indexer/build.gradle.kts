@@ -49,3 +49,22 @@ tasks.jar {
     archiveBaseName.set("embedding-indexer")
     archiveClassifier.set("all")
 }
+
+// Run text indexer (original)
+tasks.register<JavaExec>("runTextIndexer") {
+    group = "application"
+    description = "Run the text embedding indexer"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.github.alphapaca.embeddingindexer.MainKt")
+}
+
+// Run code indexer
+tasks.register<JavaExec>("runCodeIndexer") {
+    group = "application"
+    description = "Run the code embedding indexer for Kotlin files"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.github.alphapaca.embeddingindexer.CodeIndexerMainKt")
+
+    // Pass project path as argument (defaults to current directory)
+    // Usage: ./gradlew :embedding-indexer:runCodeIndexer --args="/path/to/project"
+}

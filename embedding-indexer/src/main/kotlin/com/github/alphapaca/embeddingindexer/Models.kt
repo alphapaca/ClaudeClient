@@ -73,3 +73,27 @@ data class RerankResult(
     @SerialName("relevance_score")
     val relevanceScore: Float,
 )
+
+// Code chunking models
+enum class CodeChunkType {
+    FILE,           // Entire small file
+    CLASS,          // Class declaration
+    INTERFACE,      // Interface declaration
+    OBJECT,         // Object declaration
+    FUNCTION,       // Top-level or method function
+    PROPERTY,       // Top-level or class property
+    COMPANION,      // Companion object
+}
+
+@Serializable
+data class CodeChunk(
+    val id: Long = 0,
+    val content: String,
+    val filePath: String,
+    val startLine: Int,
+    val endLine: Int,
+    val chunkType: CodeChunkType,
+    val name: String,
+    val parentName: String? = null,
+    val signature: String? = null,
+)

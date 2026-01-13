@@ -17,6 +17,19 @@ data class SearchResult(
     val paragraphNumber: Int,
 )
 
+data class CodeSearchResult(
+    val chunkId: Long,
+    val content: String,
+    val distance: Float,
+    val filePath: String,
+    val startLine: Int,
+    val endLine: Int,
+    val chunkType: CodeChunkType,
+    val name: String,
+    val parentName: String?,
+    val signature: String?,
+)
+
 class VectorStore(
     private val dbPath: String,
     private val wipeOnInit: Boolean = false
@@ -295,5 +308,285 @@ class VectorStore(
             connection.close()
             logger.info("Database connection closed")
         }
+    }
+
+    // ==================== Code Chunks Support ====================
+
+    /**
+     * Initialize code-specific tables. Call this before inserting code chunks.
+     */
+    fun initCodeTables() {
+        connection.createStatement().use { stmt ->
+            // Create code_chunks table
+            stmt.execute(
+                """
+                CREATE TABLE IF NOT EXISTS code_chunks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    content TEXT NOT NULL,
+                    file_path TEXT NOT NULL,
+                    start_line INTEGER NOT NULL,
+                    end_line INTEGER NOT NULL,
+                    chunk_type TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    parent_name TEXT,
+                    signature TEXT,
+                    created_at INTEGER NOT NULL
+                )
+                """.trimIndent()
+            )
+
+            // Create indexes for code search
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_code_file ON code_chunks(file_path)")
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_code_name ON code_chunks(name)")
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_code_type ON code_chunks(chunk_type)")
+
+            // Create virtual table for code vectors
+            // voyage-code-3 uses 1024 dimensions
+            stmt.execute(
+                """
+                CREATE VIRTUAL TABLE IF NOT EXISTS code_chunks_vec USING vec0(
+                    chunk_id INTEGER PRIMARY KEY,
+                    embedding FLOAT[1024]
+                )
+                """.trimIndent()
+            )
+        }
+
+        logger.info("Code tables initialized")
+    }
+
+    /**
+     * Insert a single code chunk with its embedding.
+     */
+    fun insertCodeChunk(chunk: CodeChunk, embedding: List<Float>): Long {
+        val chunkId: Long
+
+        connection.prepareStatement(
+            """
+            INSERT INTO code_chunks (content, file_path, start_line, end_line, chunk_type, name, parent_name, signature, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """.trimIndent()
+        ).use { stmt ->
+            stmt.setString(1, chunk.content)
+            stmt.setString(2, chunk.filePath)
+            stmt.setInt(3, chunk.startLine)
+            stmt.setInt(4, chunk.endLine)
+            stmt.setString(5, chunk.chunkType.name)
+            stmt.setString(6, chunk.name)
+            stmt.setString(7, chunk.parentName)
+            stmt.setString(8, chunk.signature)
+            stmt.setLong(9, System.currentTimeMillis())
+            stmt.executeUpdate()
+
+            val rs = stmt.generatedKeys
+            rs.next()
+            chunkId = rs.getLong(1)
+        }
+
+        connection.prepareStatement(
+            """
+            INSERT INTO code_chunks_vec (chunk_id, embedding)
+            VALUES (?, ?)
+            """.trimIndent()
+        ).use { stmt ->
+            stmt.setLong(1, chunkId)
+            stmt.setBytes(2, embeddingToBlob(embedding))
+            stmt.executeUpdate()
+        }
+
+        return chunkId
+    }
+
+    /**
+     * Insert multiple code chunks with their embeddings in a batch.
+     */
+    fun insertCodeChunks(chunksWithEmbeddings: List<Pair<CodeChunk, List<Float>>>) {
+        connection.autoCommit = false
+
+        try {
+            val chunkStmt = connection.prepareStatement(
+                """
+                INSERT INTO code_chunks (content, file_path, start_line, end_line, chunk_type, name, parent_name, signature, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """.trimIndent()
+            )
+
+            val vecStmt = connection.prepareStatement(
+                """
+                INSERT INTO code_chunks_vec (chunk_id, embedding)
+                VALUES (?, ?)
+                """.trimIndent()
+            )
+
+            val now = System.currentTimeMillis()
+
+            for ((chunk, embedding) in chunksWithEmbeddings) {
+                chunkStmt.setString(1, chunk.content)
+                chunkStmt.setString(2, chunk.filePath)
+                chunkStmt.setInt(3, chunk.startLine)
+                chunkStmt.setInt(4, chunk.endLine)
+                chunkStmt.setString(5, chunk.chunkType.name)
+                chunkStmt.setString(6, chunk.name)
+                chunkStmt.setString(7, chunk.parentName)
+                chunkStmt.setString(8, chunk.signature)
+                chunkStmt.setLong(9, now)
+                chunkStmt.executeUpdate()
+
+                val rs = chunkStmt.generatedKeys
+                rs.next()
+                val chunkId = rs.getLong(1)
+
+                vecStmt.setLong(1, chunkId)
+                vecStmt.setBytes(2, embeddingToBlob(embedding))
+                vecStmt.executeUpdate()
+            }
+
+            connection.commit()
+            logger.info("Inserted ${chunksWithEmbeddings.size} code chunks with embeddings")
+        } catch (e: Exception) {
+            connection.rollback()
+            throw e
+        } finally {
+            connection.autoCommit = true
+        }
+    }
+
+    /**
+     * Get the count of indexed code chunks.
+     */
+    fun getCodeChunkCount(): Int {
+        connection.createStatement().use { stmt ->
+            val rs = stmt.executeQuery("SELECT COUNT(*) FROM code_chunks")
+            rs.next()
+            return rs.getInt(1)
+        }
+    }
+
+    /**
+     * Search for similar code chunks using vector similarity.
+     */
+    fun searchSimilarCode(queryEmbedding: List<Float>, limit: Int = 5): List<CodeSearchResult> {
+        val results = mutableListOf<CodeSearchResult>()
+        val k = limit.coerceIn(1, 50)
+
+        connection.prepareStatement(
+            """
+            SELECT
+                code_chunks.id,
+                code_chunks.content,
+                code_chunks.file_path,
+                code_chunks.start_line,
+                code_chunks.end_line,
+                code_chunks.chunk_type,
+                code_chunks.name,
+                code_chunks.parent_name,
+                code_chunks.signature,
+                code_chunks_vec.distance
+            FROM code_chunks_vec
+            JOIN code_chunks ON code_chunks.id = code_chunks_vec.chunk_id
+            WHERE embedding MATCH ? AND k = $k
+            ORDER BY distance
+            """.trimIndent()
+        ).use { stmt ->
+            stmt.setBytes(1, embeddingToBlob(queryEmbedding))
+
+            val rs = stmt.executeQuery()
+            while (rs.next()) {
+                results.add(
+                    CodeSearchResult(
+                        chunkId = rs.getLong("id"),
+                        content = rs.getString("content"),
+                        distance = rs.getFloat("distance"),
+                        filePath = rs.getString("file_path"),
+                        startLine = rs.getInt("start_line"),
+                        endLine = rs.getInt("end_line"),
+                        chunkType = CodeChunkType.valueOf(rs.getString("chunk_type")),
+                        name = rs.getString("name"),
+                        parentName = rs.getString("parent_name"),
+                        signature = rs.getString("signature"),
+                    )
+                )
+            }
+        }
+
+        logger.debug("Found ${results.size} similar code chunks")
+        return results
+    }
+
+    /**
+     * Search for code chunks by file path pattern.
+     */
+    fun searchCodeByFile(filePattern: String, limit: Int = 20): List<CodeChunk> {
+        val results = mutableListOf<CodeChunk>()
+
+        connection.prepareStatement(
+            """
+            SELECT id, content, file_path, start_line, end_line, chunk_type, name, parent_name, signature
+            FROM code_chunks
+            WHERE file_path LIKE ?
+            LIMIT ?
+            """.trimIndent()
+        ).use { stmt ->
+            stmt.setString(1, "%$filePattern%")
+            stmt.setInt(2, limit)
+
+            val rs = stmt.executeQuery()
+            while (rs.next()) {
+                results.add(
+                    CodeChunk(
+                        id = rs.getLong("id"),
+                        content = rs.getString("content"),
+                        filePath = rs.getString("file_path"),
+                        startLine = rs.getInt("start_line"),
+                        endLine = rs.getInt("end_line"),
+                        chunkType = CodeChunkType.valueOf(rs.getString("chunk_type")),
+                        name = rs.getString("name"),
+                        parentName = rs.getString("parent_name"),
+                        signature = rs.getString("signature"),
+                    )
+                )
+            }
+        }
+
+        return results
+    }
+
+    /**
+     * Search for code chunks by symbol name.
+     */
+    fun searchCodeByName(namePattern: String, limit: Int = 20): List<CodeChunk> {
+        val results = mutableListOf<CodeChunk>()
+
+        connection.prepareStatement(
+            """
+            SELECT id, content, file_path, start_line, end_line, chunk_type, name, parent_name, signature
+            FROM code_chunks
+            WHERE name LIKE ? OR parent_name LIKE ?
+            LIMIT ?
+            """.trimIndent()
+        ).use { stmt ->
+            stmt.setString(1, "%$namePattern%")
+            stmt.setString(2, "%$namePattern%")
+            stmt.setInt(3, limit)
+
+            val rs = stmt.executeQuery()
+            while (rs.next()) {
+                results.add(
+                    CodeChunk(
+                        id = rs.getLong("id"),
+                        content = rs.getString("content"),
+                        filePath = rs.getString("file_path"),
+                        startLine = rs.getInt("start_line"),
+                        endLine = rs.getInt("end_line"),
+                        chunkType = CodeChunkType.valueOf(rs.getString("chunk_type")),
+                        name = rs.getString("name"),
+                        parentName = rs.getString("parent_name"),
+                        signature = rs.getString("signature"),
+                    )
+                )
+            }
+        }
+
+        return results
     }
 }

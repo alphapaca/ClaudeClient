@@ -15,7 +15,9 @@ import com.github.alphapaca.claudeclient.di.appModule
 import com.github.alphapaca.claudeclient.domain.usecase.AutoConnectMCPServerUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.ObserveReminderNotificationsUseCase
 import com.github.alphapaca.claudeclient.presentation.chat.ChatScreen
+import com.github.alphapaca.claudeclient.presentation.codesession.CodeSessionScreenWrapper
 import com.github.alphapaca.claudeclient.presentation.navigation.ChatKey
+import com.github.alphapaca.claudeclient.presentation.navigation.CodeSessionKey
 import com.github.alphapaca.claudeclient.presentation.navigation.SettingsKey
 import com.github.alphapaca.claudeclient.presentation.settings.SettingsScreen
 import org.koin.compose.KoinApplication
@@ -55,11 +57,18 @@ fun App(platformModule: Module) {
                     entry<ChatKey> {
                         ChatScreen(
                             modifier = Modifier.Companion.padding(innerPadding),
-                            onSettingsClick = { backStack.add(SettingsKey) }
+                            onSettingsClick = { backStack.add(SettingsKey) },
+                            onCodeSessionClick = { backStack.add(CodeSessionKey) },
                         )
                     }
                     entry<SettingsKey> {
                         SettingsScreen(
+                            modifier = Modifier.Companion.padding(innerPadding),
+                            onBackClick = { backStack.removeLastOrNull() },
+                        )
+                    }
+                    entry<CodeSessionKey> {
+                        CodeSessionScreenWrapper(
                             modifier = Modifier.Companion.padding(innerPadding),
                             onBackClick = { backStack.removeLastOrNull() },
                         )

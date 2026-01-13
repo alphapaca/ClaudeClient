@@ -65,6 +65,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun ChatScreen(
     modifier: Modifier = Modifier,
     onSettingsClick: () -> Unit = {},
+    onCodeSessionClick: () -> Unit = {},
 ) {
     val viewModel = koinViewModel<ChatViewModel>()
     val chatItems by viewModel.chatItems.collectAsState(emptyList())
@@ -93,6 +94,10 @@ fun ChatScreen(
                 onConversationSelected = { conversationId ->
                     viewModel.switchConversation(conversationId)
                     scope.launch { drawerState.close() }
+                },
+                onCodeSessionClick = {
+                    scope.launch { drawerState.close() }
+                    onCodeSessionClick()
                 },
             )
         },
@@ -126,6 +131,7 @@ private fun ConversationDrawerContent(
     currentConversationId: String?,
     onNewConversation: () -> Unit,
     onConversationSelected: (String) -> Unit,
+    onCodeSessionClick: () -> Unit = {},
 ) {
     ModalDrawerSheet {
         Text(
@@ -139,6 +145,14 @@ private fun ConversationDrawerContent(
             label = { Text("New conversation") },
             selected = false,
             onClick = onNewConversation,
+            modifier = Modifier.padding(horizontal = 12.dp)
+        )
+
+        NavigationDrawerItem(
+            icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+            label = { Text("Code sessions") },
+            selected = false,
+            onClick = onCodeSessionClick,
             modifier = Modifier.padding(horizontal = 12.dp)
         )
 

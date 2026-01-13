@@ -43,3 +43,15 @@ data class ClaudeUsage(
     @SerialName("cache_read_input_tokens")
     val cacheReadInputTokens: Int? = null,
 )
+
+@Serializable
+data class ClaudeErrorResponse(
+    val type: String,
+    val error: ClaudeError,
+)
+
+@Serializable
+data class ClaudeError(
+    val type: String,
+    val message: String,
+)
