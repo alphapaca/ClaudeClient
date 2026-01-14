@@ -52,7 +52,7 @@ class ClaudeReviewService(private val apiKey: String) {
         val userPrompt = buildUserPrompt(filePath, hunk, context)
 
         val request = ClaudeRequest(
-            model = "claude-sonnet-4-5-20250514",
+            model = "claude-sonnet-4-20250514",
             maxTokens = 4096,
             system = systemPrompt,
             messages = listOf(
