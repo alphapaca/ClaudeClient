@@ -27,6 +27,13 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Install sqlite-vec extension
+        run: |
+          wget -q https://github.com/asg017/sqlite-vec/releases/download/v0.1.6/sqlite-vec-0.1.6-loadable-linux-x86_64.tar.gz
+          tar -xzf sqlite-vec-0.1.6-loadable-linux-x86_64.tar.gz
+          sudo mkdir -p /usr/local/lib/sqlite-vec
+          sudo mv vec0.so /usr/local/lib/sqlite-vec/
+
       - name: Build review-agent
         run: ./gradlew :review-agent:jvmJar
 
