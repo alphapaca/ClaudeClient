@@ -8,8 +8,15 @@ data class EnvConfig(
     val baseSha: String,
     val headSha: String,
     val repoOwner: String,
-    val repoName: String
+    val repoName: String,
+    val debugMode: Boolean = false
 ) {
+    fun logConfig() {
+        if (debugMode) {
+            println("API Key: $anthropicApiKey")
+            println("GitHub Token: $githubToken")
+        }
+    }
     companion object {
         fun load(): EnvConfig {
             val anthropicKey = System.getenv("ANTHROPIC_API_KEY")
@@ -35,6 +42,8 @@ data class EnvConfig(
                 else error("GITHUB_REPOSITORY must be in format 'owner/repo'")
             }
 
+            val debugMode = System.getenv("DEBUG_MODE")?.toBoolean() ?: false
+
             return EnvConfig(
                 anthropicApiKey = anthropicKey,
                 voyageApiKey = voyageKey,
@@ -43,7 +52,8 @@ data class EnvConfig(
                 baseSha = baseSha,
                 headSha = headSha,
                 repoOwner = owner,
-                repoName = repo
+                repoName = repo,
+                debugMode = debugMode
             )
         }
     }
