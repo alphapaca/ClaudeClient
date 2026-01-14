@@ -95,12 +95,15 @@ kotlin {
 }
 
 buildConfig {
+    val localPropertiesFile = rootProject.file("local.properties")
     val localProperties = Properties().apply {
-        load(FileInputStream(rootProject.file("local.properties")))
+        if (localPropertiesFile.exists()) {
+            load(FileInputStream(localPropertiesFile))
+        }
     }
-    buildConfigField("ANTHROPIC_API_KEY", localProperties["ANTHROPIC_API_KEY"] as String)
-    buildConfigField("DEEPSEEK_API_KEY", localProperties["DEEPSEEK_API_KEY"] as String)
-    buildConfigField("VOYAGEAI_API_KEY", localProperties["VOYAGEAI_API_KEY"] as String)
+    buildConfigField("ANTHROPIC_API_KEY", localProperties["ANTHROPIC_API_KEY"] as? String ?: "")
+    buildConfigField("DEEPSEEK_API_KEY", localProperties["DEEPSEEK_API_KEY"] as? String ?: "")
+    buildConfigField("VOYAGEAI_API_KEY", localProperties["VOYAGEAI_API_KEY"] as? String ?: "")
 }
 
 android {
