@@ -18,3 +18,16 @@ captures
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
 .code-index/
+
+# Environment files with credentials
+.env
+*.env.local
+
+# Web frontend build artifacts (large WASM files)
+*.wasm
+web-agent-backend/src/main/resources/web/*.js
+web-agent-backend/src/main/resources/web/*.js.map
+web-agent-backend/src/main/resources/web/*.LICENSE.txt
+
+# Kotlin JS store
+kotlin-js-store/
