@@ -33,6 +33,13 @@ ClaudeClient is a Kotlin Multiplatform chat application that integrates with mul
 ./gradlew :embedding-indexer:runCodeIndexer        # Index Kotlin code
 ./gradlew :mcp-foundation-search:jar               # Build search MCP JAR
 ./gradlew :review-agent:jvmJar                     # Build review agent JAR
+./gradlew :github-issues-mcp:jar                   # Build GitHub issues MCP JAR
+```
+
+### Web Agent
+```bash
+./gradlew :web-agent-frontend:wasmJsBrowserDistribution  # Build frontend WASM
+./gradlew :web-agent-backend:run                          # Run backend server
 ```
 
 ## API Key Configuration
@@ -42,7 +49,10 @@ Configure API keys in `local.properties` (never commit this file):
 ANTHROPIC_API_KEY=your_key_here
 DEEPSEEK_API_KEY=your_key_here
 VOYAGE_API_KEY=your_key_here
+GITHUB_TOKEN=your_github_token_here  # Optional, for GitHub issues search
 ```
+
+For the web agent, these can also be set as environment variables or in `~/.web-agent/config.properties`.
 
 ## Architecture
 
@@ -54,6 +64,9 @@ VOYAGE_API_KEY=your_key_here
 - **embedding-indexer**: Vector embeddings indexer using VoyageAI
 - **mcp-foundation-search**: MCP server for semantic code search
 - **review-agent**: AI-powered PR code review agent
+- **github-issues-mcp**: MCP server for GitHub issue search
+- **web-agent-backend**: Ktor server providing REST API for codebase Q&A (RAG)
+- **web-agent-frontend**: Compose for Web (WASM) Q&A interface
 
 ### Source Sets (composeApp)
 

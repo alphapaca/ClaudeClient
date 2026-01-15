@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- All logging goes to stderr to avoid interfering with MCP stdout communication -->
+    <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.err</target>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Suppress MCP SDK logging (it outputs to stdout by default) -->
+    <logger name="io.modelcontextprotocol" level="ERROR" />
+
+    <!-- Root logger -->
+    <root level="INFO">
+        <appender-ref ref="STDERR" />
+    </root>
+</configuration>
