@@ -90,6 +90,40 @@ class GitHubService(
         return json.decodeFromString(kotlinx.serialization.builtins.ListSerializer(GitHubIssue.serializer()), responseBody)
     }
 
+    /**
+     * Create a new issue in the repository.
+     */
+    suspend fun createIssue(
+        title: String,
+        body: String? = null,
+        labels: List<String> = emptyList(),
+        assignees: List<String> = emptyList(),
+    ): GitHubIssue {
+        if (token.isNullOrBlank()) {
+            throw GitHubApiException(401, "GITHUB_TOKEN is required to create issues")
+        }
+
+        val url = URL("$baseUrl/repos/$owner/$repo/issues")
+        val requestBody = buildString {
+            append("{")
+            append("\"title\":${escapeJsonString(title)}")
+            if (!body.isNullOrBlank()) {
+                append(",\"body\":${escapeJsonString(body)}")
+            }
+            if (labels.isNotEmpty()) {
+                append(",\"labels\":[${labels.joinToString(",") { escapeJsonString(it) }}]")
+            }
+            if (assignees.isNotEmpty()) {
+                append(",\"assignees\":[${assignees.joinToString(",") { escapeJsonString(it) }}]")
+            }
+            append("}")
+        }
+
+        System.err.println("[GitHubService] Creating issue: $title")
+        val responseBody = executePost(url, requestBody)
+        return json.decodeFromString(GitHubIssue.serializer(), responseBody)
+    }
+
     private fun executeGet(url: URL): String {
         val connection = url.openConnection() as HttpURLConnection
         connection.requestMethod = "GET"
@@ -115,6 +149,35 @@ class GitHubService(
         return connection.inputStream.bufferedReader().readText()
     }
 
+    private fun executePost(url: URL, body: String): String {
+        val connection = url.openConnection() as HttpURLConnection
+        connection.requestMethod = "POST"
+        connection.setRequestProperty("Accept", "application/vnd.github+json")
+        connection.setRequestProperty("Content-Type", "application/json")
+        connection.setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
+        if (!token.isNullOrBlank()) {
+            connection.setRequestProperty("Authorization", "Bearer $token")
+        }
+        connection.connectTimeout = 30_000
+        connection.readTimeout = 30_000
+        connection.doOutput = true
+
+        connection.outputStream.bufferedWriter().use { it.write(body) }
+
+        val responseCode = connection.responseCode
+
+        if (responseCode !in 200..299) {
+            val errorBody = connection.errorStream?.bufferedReader()?.readText() ?: "Unknown error"
+            throw GitHubApiException(
+                statusCode = responseCode,
+                message = getErrorMessage(responseCode, errorBody),
+                responseBody = errorBody,
+            )
+        }
+
+        return connection.inputStream.bufferedReader().readText()
+    }
+
     private fun getErrorMessage(statusCode: Int, body: String): String {
         return when (statusCode) {
             401 -> "Unauthorized - check GITHUB_TOKEN"
@@ -123,6 +186,16 @@ class GitHubService(
             422 -> "Invalid request: $body"
             else -> "HTTP $statusCode"
         }
+    }
+
+    private fun escapeJsonString(value: String): String {
+        val escaped = value
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
+        return "\"$escaped\""
     }
 
     fun close() {

@@ -225,6 +225,79 @@ fun main(): Unit = runBlocking {
         }
     }
 
+    // Tool: create_github_issue
+    server.addTool(
+        name = "create_github_issue",
+        description = """Create a new GitHub issue in the $owner/$repo repository.
+            |Use this to create bug reports, feature requests, or tasks.
+            |Requires GITHUB_TOKEN with 'repo' scope.
+            |
+            |Examples:
+            |- Bug report: title="App crashes on startup" body="Steps to reproduce..." labels=["bug"]
+            |- Feature request: title="Add dark mode" body="It would be nice to have..." labels=["enhancement"]
+            |- Task: title="Update documentation" labels=["documentation"]
+        """.trimMargin(),
+        inputSchema = ToolSchema(
+            properties = buildJsonObject {
+                put("title", buildJsonObject {
+                    put("type", JsonPrimitive("string"))
+                    put("description", JsonPrimitive("Issue title (required)"))
+                })
+                put("body", buildJsonObject {
+                    put("type", JsonPrimitive("string"))
+                    put("description", JsonPrimitive("Issue body/description (supports markdown)"))
+                })
+                put("labels", buildJsonObject {
+                    put("type", JsonPrimitive("array"))
+                    put("items", buildJsonObject { put("type", JsonPrimitive("string")) })
+                    put("description", JsonPrimitive("Labels to add (e.g., [\"bug\", \"urgent\"])"))
+                })
+                put("assignees", buildJsonObject {
+                    put("type", JsonPrimitive("array"))
+                    put("items", buildJsonObject { put("type", JsonPrimitive("string")) })
+                    put("description", JsonPrimitive("GitHub usernames to assign"))
+                })
+            },
+            required = listOf("title")
+        )
+    ) { request ->
+        val title = request.arguments?.get("title")?.jsonPrimitive?.content
+            ?: return@addTool CallToolResult(
+                content = listOf(TextContent(text = "Error: 'title' parameter is required")),
+                isError = true
+            )
+
+        val body = request.arguments?.get("body")?.jsonPrimitive?.content
+        val labels = request.arguments?.get("labels")?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList()
+        val assignees = request.arguments?.get("assignees")?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList()
+
+        try {
+            System.err.println("Creating issue: title='$title', labels=$labels, assignees=$assignees")
+            val issue = gitHubService.createIssue(title, body, labels, assignees)
+
+            val response = buildString {
+                appendLine("Successfully created issue #${issue.number}")
+                appendLine()
+                appendLine("Title: ${issue.title}")
+                appendLine("URL: ${issue.htmlUrl}")
+                appendLine("State: ${issue.state}")
+                if (issue.labels.isNotEmpty()) {
+                    appendLine("Labels: ${issue.labels.joinToString(", ") { it.name }}")
+                }
+            }
+
+            CallToolResult(
+                content = listOf(TextContent(text = response))
+            )
+        } catch (e: Exception) {
+            System.err.println("Error creating issue: ${e.message}")
+            CallToolResult(
+                content = listOf(TextContent(text = "Error creating issue: ${e.message}")),
+                isError = true
+            )
+        }
+    }
+
     val transport = StdioServerTransport(
         inputStream = System.`in`.asSource().buffered(),
         outputStream = System.out.asSink().buffered()
