@@ -13,4 +13,5 @@
     <logger name="io.ktor" level="INFO" />
     <logger name="io.netty" level="WARN" />
     <logger name="com.github.alphapaca.webagent" level="DEBUG" />
+    <logger name="ai.koog" level="DEBUG" />
 </configuration>

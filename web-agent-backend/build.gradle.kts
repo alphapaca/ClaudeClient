@@ -9,13 +9,17 @@ version = "1.0.0"
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
+        // Koog requires JDK 17+
+        languageVersion = JavaLanguageVersion.of(17)
     }
 }
 
 application {
     mainClass.set("com.github.alphapaca.webagent.MainKt")
 }
+
+// Koog version
+val koogVersion = "0.6.0"
 
 dependencies {
     // Use classes configuration to avoid fat JAR issues
@@ -26,6 +30,10 @@ dependencies {
     // Add the embedding-indexer's dependencies directly
     implementation(libs.sqlite.jdbc)
 
+    // Koog AI agent framework
+    implementation("ai.koog:koog-agents:$koogVersion")
+    implementation("ai.koog:agents-mcp:$koogVersion")
+
     // Ktor server
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
@@ -34,12 +42,10 @@ dependencies {
     implementation(libs.ktor.server.static)
     implementation(libs.ktor.serialization.kotlinx.json)
 
-    // Ktor client for Claude API
+    // Ktor client for VoyageAI and GitHub API
     implementation(libs.ktor.client.okhttp)
+    implementation(libs.ktor.client.cio)
     implementation(libs.ktor.client.content.negotiation)
-
-    // MCP SDK for GitHub issues integration
-    implementation(libs.mcp.kotlin.sdk)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)

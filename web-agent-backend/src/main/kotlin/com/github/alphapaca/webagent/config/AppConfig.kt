@@ -16,6 +16,11 @@ data class AppConfig(
     val autoIndex: Boolean,
     val enableCodeSearch: Boolean,
     val enableIssueSearch: Boolean,
+    // Koog agent configuration
+    val llmModel: String,
+    val maxTokens: Int,
+    val temperature: Double,
+    val maxAgentIterations: Int,
 ) {
     companion object {
         fun load(): AppConfig {
@@ -36,8 +41,13 @@ data class AppConfig(
                 projectPath = loadEnvParameter("PROJECT_PATH")
                     ?: System.getProperty("user.dir"),
                 autoIndex = loadEnvParameter("AUTO_INDEX")?.toBoolean() ?: true,
-                enableCodeSearch = loadEnvParameter("ENABLE_CODE_SEARCH")?.toBoolean() ?: true,
-                enableIssueSearch = loadEnvParameter("ENABLE_ISSUE_SEARCH")?.toBoolean() ?: true,
+                enableCodeSearch = true,
+                enableIssueSearch = true,
+                // Koog agent configuration
+                llmModel = loadEnvParameter("LLM_MODEL") ?: "claude-sonnet-4",
+                maxTokens = loadEnvParameter("MAX_TOKENS")?.toIntOrNull() ?: 4096,
+                temperature = loadEnvParameter("TEMPERATURE")?.toDoubleOrNull() ?: 0.7,
+                maxAgentIterations = loadEnvParameter("MAX_AGENT_ITERATIONS")?.toIntOrNull() ?: 10,
             )
         }
 

@@ -13,8 +13,8 @@ java {
 }
 
 dependencies {
-    // Ktor client for VoyageAI API
-    implementation(libs.ktor.client.cio)
+    // Ktor client for VoyageAI API (OkHttp for SOCKS proxy support)
+    implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
 

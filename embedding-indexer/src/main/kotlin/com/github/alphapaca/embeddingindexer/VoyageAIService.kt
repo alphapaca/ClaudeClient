@@ -1,7 +1,7 @@
 package com.github.alphapaca.embeddingindexer
 
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -14,8 +14,15 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
+import java.net.InetSocketAddress
+import java.net.Proxy
+import java.util.concurrent.TimeUnit
 
-class VoyageAIService(private val apiKey: String) {
+class VoyageAIService(
+    private val apiKey: String,
+    private val socksProxyHost: String? = System.getenv("SOCKS_PROXY_HOST"),
+    private val socksProxyPort: Int? = System.getenv("SOCKS_PROXY_PORT")?.toIntOrNull(),
+) {
 
     private val logger = LoggerFactory.getLogger(VoyageAIService::class.java)
 
@@ -25,13 +32,22 @@ class VoyageAIService(private val apiKey: String) {
         encodeDefaults = true  // Required to include 'model' field with default value
     }
 
-    private val client = HttpClient(CIO) {
+    private val client = HttpClient(OkHttp) {
         install(ContentNegotiation) {
             json(json)
         }
 
         engine {
-            requestTimeout = 120_000 // 2 minutes
+            config {
+                connectTimeout(30, TimeUnit.SECONDS)
+                readTimeout(120, TimeUnit.SECONDS)
+                writeTimeout(120, TimeUnit.SECONDS)
+
+                if (socksProxyHost != null && socksProxyPort != null) {
+                    proxy(Proxy(Proxy.Type.SOCKS, InetSocketAddress(socksProxyHost, socksProxyPort)))
+                    logger.info("Configured SOCKS proxy: $socksProxyHost:$socksProxyPort")
+                }
+            }
         }
     }
 

@@ -24,8 +24,8 @@ import java.util.Properties
 
 fun main(): Unit = runBlocking {
     val token = loadEnvParameter("GITHUB_TOKEN")
-    val owner = loadEnvParameter("GITHUB_OWNER") ?: "anthropics"
-    val repo = loadEnvParameter("GITHUB_REPO") ?: "claude-code"
+    val owner = loadEnvParameter("GITHUB_OWNER")!!
+    val repo = loadEnvParameter("GITHUB_REPO")!!
 
     val gitHubService = GitHubService(token, owner, repo)
 

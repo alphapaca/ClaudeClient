@@ -1,41 +1,75 @@
 package com.github.alphapaca.webagent.api
 
-import com.github.alphapaca.webagent.api.models.AskRequest
-import com.github.alphapaca.webagent.api.models.ErrorResponse
-import com.github.alphapaca.webagent.api.models.HealthResponse
-import com.github.alphapaca.webagent.api.models.SearchResponse
-import com.github.alphapaca.webagent.data.repository.RAGRepository
+import ai.koog.agents.core.agent.AIAgentService
+import com.github.alphapaca.embeddingindexer.VectorStore
+import com.github.alphapaca.embeddingindexer.VoyageAIService
+import com.github.alphapaca.webagent.api.models.*
+import com.github.alphapaca.webagent.config.AppConfig
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.http.content.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("Routes")
 
-fun Application.configureRouting(ragRepository: RAGRepository) {
+private suspend fun <T> retryWithBackoff(
+    maxRetries: Int = 3,
+    initialDelayMs: Long = 2000,
+    maxDelayMs: Long = 30000,
+    block: suspend () -> T
+): T {
+    var currentDelay = initialDelayMs
+    repeat(maxRetries) { attempt ->
+        try {
+            return block()
+        } catch (e: Exception) {
+            val isRateLimitError = e.message?.contains("429") == true ||
+                    e.message?.contains("rate_limit") == true ||
+                    e.message?.contains("Rate limit") == true
+
+            if (!isRateLimitError || attempt == maxRetries - 1) {
+                throw e
+            }
+
+            logger.warn("Rate limit hit, attempt ${attempt + 1}/$maxRetries, waiting ${currentDelay}ms before retry")
+            delay(currentDelay)
+            currentDelay = (currentDelay * 2).coerceAtMost(maxDelayMs)
+        }
+    }
+    throw IllegalStateException("Should not reach here")
+}
+
+fun Application.configureRouting(
+    agentService: AIAgentService<String, String, *>,
+    vectorStore: VectorStore?,
+    voyageService: VoyageAIService?,
+    config: AppConfig,
+) {
+    val githubBaseUrl = "https://github.com/${config.githubOwner}/${config.githubRepo}"
     routing {
         // API routes first
         route("/api") {
             // Health check endpoint
             get("/health") {
                 val codeChunkCount = try {
-                    ragRepository.getCodeChunkCount()
+                    vectorStore?.getCodeChunkCount() ?: 0
                 } catch (e: Exception) {
                     -1
                 }
 
                 call.respond(
                     HealthResponse(
-                        status = if (codeChunkCount >= 0) "ok" else "degraded",
+                        status = "ok",
                         codeChunksIndexed = codeChunkCount,
                     )
                 )
             }
 
-            // Ask a question (RAG endpoint)
+            // Ask a question (RAG endpoint using Koog agent)
             post("/ask") {
                 try {
                     val request = call.receive<AskRequest>()
@@ -49,14 +83,28 @@ fun Application.configureRouting(ragRepository: RAGRepository) {
                     }
 
                     logger.info("Received question: ${request.question.take(100)}...")
+                    val startTime = System.currentTimeMillis()
 
-                    val response = ragRepository.askQuestion(
-                        question = request.question,
-                        includeIssues = request.includeIssues,
-                        maxCodeResults = request.maxCodeResults.coerceIn(1, 20),
+                    // Run the Koog agent service with retry for rate limits
+                    logger.info("Starting agent run...")
+                    val answer = retryWithBackoff {
+                        agentService.createAgentAndRun(request.question)
+                    }
+                    logger.info("Agent completed, answer length: ${answer.length}")
+
+                    val processingTime = System.currentTimeMillis() - startTime
+                    logger.info("Question answered in ${processingTime}ms")
+
+                    // Build source references
+                    val sources = buildSourceReferences(config, githubBaseUrl)
+
+                    call.respond(
+                        AskResponse(
+                            answer = answer,
+                            sources = sources,
+                            processingTimeMs = processingTime,
+                        )
                     )
-
-                    call.respond(response)
                 } catch (e: Exception) {
                     logger.error("Error processing question: ${e.message}", e)
                     call.respond(
@@ -83,16 +131,34 @@ fun Application.configureRouting(ragRepository: RAGRepository) {
                         return@get
                     }
 
+                    if (!config.enableCodeSearch || vectorStore == null || voyageService == null) {
+                        call.respond(
+                            SearchResponse(results = emptyList(), totalCount = 0)
+                        )
+                        return@get
+                    }
+
                     logger.info("Searching code: $query (limit: $limit)")
 
-                    val results = ragRepository.searchCode(
-                        query = query,
-                        limit = limit.coerceIn(1, 50),
-                    )
+                    val results = withTimeoutOrNull(10_000) {
+                        val queryEmbedding = voyageService.getEmbeddings(listOf(query)).first()
+                        vectorStore.searchSimilarCode(queryEmbedding, limit.coerceIn(1, 50))
+                    } ?: emptyList()
 
                     call.respond(
                         SearchResponse(
-                            results = results,
+                            results = results.map { result ->
+                                CodeSearchResultDto(
+                                    filePath = result.filePath,
+                                    name = result.name,
+                                    chunkType = result.chunkType.name,
+                                    startLine = result.startLine,
+                                    endLine = result.endLine,
+                                    content = result.content,
+                                    similarity = 1f - result.distance,
+                                    signature = result.signature,
+                                )
+                            },
                             totalCount = results.size,
                         )
                     )
@@ -137,6 +203,42 @@ fun Application.configureRouting(ragRepository: RAGRepository) {
                     call.respond(HttpStatusCode.NotFound)
                 }
             }
+        }
+    }
+}
+
+private fun buildSourceReferences(config: AppConfig, githubBaseUrl: String): List<SourceReference> {
+    return buildList {
+        // Always include documentation source
+        add(
+            SourceReference(
+                type = SourceType.DOCUMENTATION,
+                title = "CLAUDE.md",
+                location = "CLAUDE.md",
+                url = "$githubBaseUrl/blob/main/CLAUDE.md",
+            )
+        )
+
+        if (config.enableCodeSearch) {
+            add(
+                SourceReference(
+                    type = SourceType.CODE,
+                    title = "Codebase Search",
+                    location = "Vector Search",
+                    url = githubBaseUrl,
+                )
+            )
+        }
+
+        if (config.enableIssueSearch) {
+            add(
+                SourceReference(
+                    type = SourceType.GITHUB_ISSUE,
+                    title = "GitHub Issues",
+                    location = "GitHub Issues",
+                    url = "$githubBaseUrl/issues",
+                )
+            )
         }
     }
 }
