@@ -14,6 +14,7 @@ import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
 import kotlinx.coroutines.runBlocking
@@ -155,9 +156,20 @@ fun main() {
 
     // Start server
     logger.info("Starting server on port ${config.port}...")
-    embeddedServer(Netty, port = config.port) {
+    embeddedServer(
+        factory = Netty,
+        configure = {
+            // Increase timeouts for large file downloads over slow networks
+            requestReadTimeoutSeconds = 60
+            responseWriteTimeoutSeconds = 60
+            connector {
+                port = config.port
+            }
+        }
+    ) {
         configureSerialization()
         configureCORS()
+        configureCompression()
         configureRouting(agentService, vectorStore, voyageService, config)
     }.start(wait = true)
 }
@@ -180,6 +192,23 @@ fun Application.configureCORS() {
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Authorization)
         anyHost() // In production, restrict to specific origins
+    }
+}
+
+fun Application.configureCompression() {
+    install(Compression) {
+        gzip {
+            priority = 1.0
+            matchContentType(
+                ContentType.Application.JavaScript,
+                ContentType("application", "wasm"),
+                ContentType.Text.Html,
+                ContentType.Text.CSS,
+                ContentType.Application.Json
+            )
+            // Compress files larger than 1KB
+            minimumSize(1024)
+        }
     }
 }
 

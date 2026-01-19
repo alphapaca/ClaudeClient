@@ -182,7 +182,6 @@ fun Application.configureRouting(
 
             val resource = this::class.java.classLoader.getResource(resourcePath)
             if (resource != null) {
-                val bytes = resource.readBytes()
                 val contentType = when {
                     resourcePath.endsWith(".html") -> ContentType.Text.Html
                     resourcePath.endsWith(".js") -> ContentType.Application.JavaScript
@@ -193,12 +192,21 @@ fun Application.configureRouting(
                     resourcePath.endsWith(".ico") -> ContentType("image", "x-icon")
                     else -> ContentType.Application.OctetStream
                 }
-                call.respondBytes(bytes, contentType)
+                // Use streaming to support large files (>4MB) like WASM modules
+                call.respondOutputStream(contentType) {
+                    resource.openStream().use { inputStream ->
+                        inputStream.copyTo(this)
+                    }
+                }
             } else {
                 // SPA fallback - serve index.html for unknown routes
                 val indexResource = this::class.java.classLoader.getResource("web/index.html")
                 if (indexResource != null) {
-                    call.respondBytes(indexResource.readBytes(), ContentType.Text.Html)
+                    call.respondOutputStream(ContentType.Text.Html) {
+                        indexResource.openStream().use { inputStream ->
+                            inputStream.copyTo(this)
+                        }
+                    }
                 } else {
                     call.respond(HttpStatusCode.NotFound)
                 }

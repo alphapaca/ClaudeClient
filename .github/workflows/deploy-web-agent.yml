@@ -1,0 +1,358 @@
+name: Deploy Web Agent to VPS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'web-agent-backend/**'
+      - 'web-agent-frontend/**'
+      - 'github-issues-mcp/**'
+      - 'embedding-indexer/**'
+      - 'Dockerfile'
+      - 'docker-compose.yaml'
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: read
+  packages: write  # Required for GitHub Container Registry
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/web-agent
+
+jobs:
+  build:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=main
+            type=raw,value=main-${{ github.sha }}
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build summary
+        run: |
+          echo "## Build Complete ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Digest:** \`${{ steps.build.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: build
+    environment: production  # Requires manual approval
+
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H $VPS_HOST >> ~/.ssh/known_hosts
+
+      - name: Deploy to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          VOYAGEAI_API_KEY: ${{ secrets.VOYAGEAI_API_KEY }}
+          IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST << 'ENDSSH'
+            set -e
+
+            echo "🔐 Logging in to GitHub Container Registry..."
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            echo "📥 Pulling new image..."
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
+
+            echo "🛑 Stopping old container..."
+            docker stop web-agent 2>/dev/null || true
+            docker rm web-agent 2>/dev/null || true
+
+            echo "📦 Ensuring volume exists..."
+            docker volume create web-agent-vectors || true
+
+            echo "🚀 Starting new container..."
+            docker run -d \
+              --name web-agent \
+              --restart unless-stopped \
+              -p 8080:8080 \
+              -v web-agent-vectors:/data/vectors \
+              -e ANTHROPIC_API_KEY="${{ secrets.ANTHROPIC_API_KEY }}" \
+              -e VOYAGE_API_KEY="${{ secrets.VOYAGEAI_API_KEY }}" \
+              -e GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}" \
+              -e GITHUB_OWNER=alphapaca \
+              -e GITHUB_REPO=ClaudeClient \
+              -e LLM_MODEL=claude-sonnet-4 \
+              -e MAX_TOKENS=4096 \
+              -e TEMPERATURE=0.7 \
+              -e MAX_AGENT_ITERATIONS=10 \
+              -e AUTO_INDEX=true \
+              -e ENABLE_CODE_SEARCH=true \
+              -e ENABLE_ISSUE_SEARCH=true \
+              -e PORT=8080 \
+              -e VECTOR_DB_PATH=/data/vectors/code-vectors.db \
+              -e GITHUB_ISSUES_MCP_JAR=/app/github-issues-mcp.jar \
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
+
+            echo "⏳ Waiting for container to initialize..."
+            sleep 15
+
+            echo "✅ Verifying container is running..."
+            if ! docker ps | grep -q web-agent; then
+              echo "❌ Container failed to start"
+              docker logs web-agent --tail 50
+              exit 1
+            fi
+
+            echo "✅ Deployment complete!"
+          ENDSSH
+
+      - name: Deployment summary
+        run: |
+          echo "## Deployment Complete ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**VPS:** \`${{ secrets.VPS_HOST }}:8080\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Frontend:** http://${{ secrets.VPS_HOST }}:8080" >> $GITHUB_STEP_SUMMARY
+
+  verify:
+    name: Verify Deployment
+    runs-on: ubuntu-latest
+    needs: deploy
+
+    steps:
+      - name: Wait for application startup
+        run: sleep 15
+
+      - name: Health check with retries
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          echo "🔍 Checking application health..."
+          MAX_RETRIES=20
+          RETRY_INTERVAL=15
+
+          for i in $(seq 1 $MAX_RETRIES); do
+            echo "Attempt $i/$MAX_RETRIES..."
+
+            if curl -f -s -o /dev/null -w "%{http_code}" http://$VPS_HOST:8080/api/health | grep -q "200"; then
+              echo "✅ Health check passed!"
+
+              # Get detailed health info
+              HEALTH_RESPONSE=$(curl -s http://$VPS_HOST:8080/api/health)
+              echo "Response: $HEALTH_RESPONSE"
+
+              echo "## Health Check Passed ✅" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**Endpoint:** http://$VPS_HOST:8080/api/health" >> $GITHUB_STEP_SUMMARY
+              echo "**Response:** \`$HEALTH_RESPONSE\`" >> $GITHUB_STEP_SUMMARY
+
+              exit 0
+            fi
+
+            echo "Health check failed, retrying in ${RETRY_INTERVAL}s..."
+            sleep $RETRY_INTERVAL
+          done
+
+          echo "❌ Health check failed after $MAX_RETRIES attempts"
+          echo "## Health Check Failed ❌" >> $GITHUB_STEP_SUMMARY
+          exit 1
+
+      - name: Verify container status
+        if: success()
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          echo "📊 Container status:"
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST \
+            "docker ps --filter name=web-agent --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}'"
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Container Status" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST \
+            "docker ps --filter name=web-agent --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}'" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  rollback:
+    name: Rollback on Failure
+    runs-on: ubuntu-latest
+    needs: [deploy, verify]
+    if: failure()
+
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H $VPS_HOST >> ~/.ssh/known_hosts
+
+      - name: Rollback to previous version
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST << 'ENDSSH'
+            set -e
+
+            echo "🔄 Starting rollback process..."
+
+            # Stop failed container
+            echo "🛑 Stopping failed container..."
+            docker stop web-agent 2>/dev/null || true
+            docker rm web-agent 2>/dev/null || true
+
+            # Find previous image (look for main-* tags excluding current deployment)
+            echo "🔍 Finding previous image..."
+            PREVIOUS_IMAGE=$(docker images ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
+              --format "{{.Repository}}:{{.Tag}}" | grep "main-" | head -n 2 | tail -n 1)
+
+            if [ -z "$PREVIOUS_IMAGE" ]; then
+              echo "⚠️ No previous image found, trying 'latest' tag..."
+              PREVIOUS_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+            fi
+
+            echo "📦 Rolling back to: $PREVIOUS_IMAGE"
+
+            # Start previous version
+            echo "🚀 Starting previous version..."
+            docker run -d \
+              --name web-agent \
+              --restart unless-stopped \
+              -p 8080:8080 \
+              -v web-agent-vectors:/data/vectors \
+              -e ANTHROPIC_API_KEY="${{ secrets.ANTHROPIC_API_KEY }}" \
+              -e VOYAGE_API_KEY="${{ secrets.VOYAGEAI_API_KEY }}" \
+              -e GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}" \
+              -e GITHUB_OWNER=alphapaca \
+              -e GITHUB_REPO=ClaudeClient \
+              -e LLM_MODEL=claude-sonnet-4 \
+              -e MAX_TOKENS=4096 \
+              -e TEMPERATURE=0.7 \
+              -e MAX_AGENT_ITERATIONS=10 \
+              -e AUTO_INDEX=true \
+              -e ENABLE_CODE_SEARCH=true \
+              -e ENABLE_ISSUE_SEARCH=true \
+              -e PORT=8080 \
+              -e VECTOR_DB_PATH=/data/vectors/code-vectors.db \
+              -e GITHUB_ISSUES_MCP_JAR=/app/github-issues-mcp.jar \
+              $PREVIOUS_IMAGE
+
+            sleep 10
+
+            if docker ps | grep -q web-agent; then
+              echo "✅ Rollback successful!"
+            else
+              echo "❌ Rollback failed!"
+              docker logs web-agent --tail 50
+              exit 1
+            fi
+          ENDSSH
+
+      - name: Rollback summary
+        run: |
+          echo "## Rollback Executed ⚠️" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Deployment failed and system was rolled back to previous version." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Action Required:** Check deployment logs and fix issues before retrying." >> $GITHUB_STEP_SUMMARY
+
+  cleanup:
+    name: Cleanup Old Images
+    runs-on: ubuntu-latest
+    needs: verify
+    if: success()
+
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H $VPS_HOST >> ~/.ssh/known_hosts
+
+      - name: Remove old images
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST << 'ENDSSH'
+            echo "🧹 Cleaning up old images..."
+
+            # Keep last 3 versions, remove older ones
+            docker images ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
+              --format "{{.ID}} {{.CreatedAt}}" | sort -k2 -r | tail -n +4 | cut -d' ' -f1 | \
+              xargs -r docker rmi -f || true
+
+            echo "✅ Cleanup complete!"
+
+            # Show remaining images
+            echo "📦 Remaining images:"
+            docker images ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          ENDSSH
+
+      - name: Cleanup summary
+        run: |
+          echo "## Cleanup Complete 🧹" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Old Docker images have been removed (keeping last 3 versions)." >> $GITHUB_STEP_SUMMARY

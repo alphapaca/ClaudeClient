@@ -1,0 +1,60 @@
+# Docker Compose for Web Agent
+# Includes: web-agent-backend + web-agent-frontend + github-issues-mcp
+#
+# Usage:
+#   1. Copy .env.example to .env and fill in your API keys
+#   2. Run: docker compose up -d
+#   3. Open: http://localhost:8080
+#
+# To rebuild after code changes:
+#   docker compose build --no-cache && docker compose up -d
+
+services:
+  web-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: web-agent
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      # Required API keys
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - VOYAGE_API_KEY=${VOYAGEAI_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      # GitHub repository configuration
+      - GITHUB_OWNER=${GITHUB_OWNER:-alphapaca}
+      - GITHUB_REPO=${GITHUB_REPO:-ClaudeClient}
+      # LLM configuration
+      - LLM_MODEL=${LLM_MODEL:-claude-sonnet-4}
+      - MAX_TOKENS=${MAX_TOKENS:-4096}
+      - TEMPERATURE=${TEMPERATURE:-0.7}
+      - MAX_AGENT_ITERATIONS=${MAX_AGENT_ITERATIONS:-10}
+      # Indexing configuration
+      - AUTO_INDEX=${AUTO_INDEX:-true}
+      # SOCKS proxy for VoyageAI (if direct access is blocked)
+      - SOCKS_PROXY_HOST=${SOCKS_PROXY_HOST:-}
+      - SOCKS_PROXY_PORT=${SOCKS_PROXY_PORT:-}
+      # Internal paths (configured for container)
+      - PORT=8080
+      - VECTOR_DB_PATH=/data/vectors/code-vectors.db
+      - GITHUB_ISSUES_MCP_JAR=/app/github-issues-mcp.jar
+      - PROJECT_PATH=/project
+      - CLAUDE_MD_PATH=/project/CLAUDE.md
+    volumes:
+      # Persist vector database across container restarts
+      - web-agent-vectors:/data/vectors
+      # Mount source code for indexing (read-only)
+      - ./:/project:ro
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      # Allow time for initial indexing on first startup
+      start_period: 60s
+    restart: unless-stopped
+
+volumes:
+  web-agent-vectors:
+    name: web-agent-vectors

@@ -12,9 +12,14 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/composeApp" />
             <option value="$PROJECT_DIR$/embedding-indexer" />
+            <option value="$PROJECT_DIR$/github-issues-mcp" />
+            <option value="$PROJECT_DIR$/koog-sample" />
             <option value="$PROJECT_DIR$/mcp-foundation-search" />
             <option value="$PROJECT_DIR$/mcp-server" />
             <option value="$PROJECT_DIR$/recipe-book-mcp" />
+            <option value="$PROJECT_DIR$/review-agent" />
+            <option value="$PROJECT_DIR$/web-agent-backend" />
+            <option value="$PROJECT_DIR$/web-agent-frontend" />
           </set>
         </option>
       </GradleProjectSettings>

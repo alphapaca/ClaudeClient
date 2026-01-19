@@ -41,6 +41,7 @@ dependencies {
     implementation(libs.ktor.server.cors)
     implementation(libs.ktor.server.static)
     implementation(libs.ktor.serialization.kotlinx.json)
+    implementation("io.ktor:ktor-server-compression:3.3.3")
 
     // Ktor client for VoyageAI and GitHub API
     implementation(libs.ktor.client.okhttp)
