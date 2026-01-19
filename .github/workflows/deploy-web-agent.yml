@@ -107,7 +107,7 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             echo "📥 Pulling new image..."
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
+            docker pull ghcr.io/alphapaca/claudeclient/web-agent:main
 
             echo "🛑 Stopping old container..."
             docker stop web-agent 2>/dev/null || true
@@ -137,7 +137,7 @@ jobs:
               -e PORT=8080 \
               -e VECTOR_DB_PATH=/data/vectors/code-vectors.db \
               -e GITHUB_ISSUES_MCP_JAR=/app/github-issues-mcp.jar \
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
+              ghcr.io/alphapaca/claudeclient/web-agent:main
 
             echo "⏳ Waiting for container to initialize..."
             sleep 15
@@ -260,12 +260,12 @@ jobs:
 
             # Find previous image (look for main-* tags excluding current deployment)
             echo "🔍 Finding previous image..."
-            PREVIOUS_IMAGE=$(docker images ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
+            PREVIOUS_IMAGE=$(docker images ghcr.io/alphapaca/claudeclient/web-agent \
               --format "{{.Repository}}:{{.Tag}}" | grep "main-" | head -n 2 | tail -n 1)
 
             if [ -z "$PREVIOUS_IMAGE" ]; then
               echo "⚠️ No previous image found, trying 'latest' tag..."
-              PREVIOUS_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+              PREVIOUS_IMAGE="ghcr.io/alphapaca/claudeclient/web-agent:latest"
             fi
 
             echo "📦 Rolling back to: $PREVIOUS_IMAGE"
@@ -340,7 +340,7 @@ jobs:
             echo "🧹 Cleaning up old images..."
 
             # Keep last 3 versions, remove older ones
-            docker images ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
+            docker images ghcr.io/alphapaca/claudeclient/web-agent \
               --format "{{.ID}} {{.CreatedAt}}" | sort -k2 -r | tail -n +4 | cut -d' ' -f1 | \
               xargs -r docker rmi -f || true
 
@@ -348,7 +348,7 @@ jobs:
 
             # Show remaining images
             echo "📦 Remaining images:"
-            docker images ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+            docker images ghcr.io/alphapaca/claudeclient/web-agent
           ENDSSH
 
       - name: Cleanup summary
