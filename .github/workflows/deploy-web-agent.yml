@@ -19,7 +19,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/web-agent
+  IMAGE_NAME: alphapaca/claudeclient/web-agent
 
 jobs:
   build:
