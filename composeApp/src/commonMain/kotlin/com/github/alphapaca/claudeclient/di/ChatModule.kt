@@ -2,6 +2,7 @@ package com.github.alphapaca.claudeclient.di
 
 import com.github.alphapaca.claudeclient.data.api.ClaudeApiClientFactory
 import com.github.alphapaca.claudeclient.data.api.DeepSeekApiClientFactory
+import com.github.alphapaca.claudeclient.data.api.OllamaApiClientFactory
 import com.github.alphapaca.claudeclient.data.local.ConversationLocalDataSource
 import com.github.alphapaca.claudeclient.data.mcp.MCPClientManager
 import com.github.alphapaca.claudeclient.data.mcp.createMCPClientManager
@@ -13,6 +14,7 @@ import com.github.alphapaca.claudeclient.data.repository.SettingsRepository
 import com.github.alphapaca.claudeclient.data.service.ClaudeService
 import com.github.alphapaca.claudeclient.data.service.DeepSeekService
 import com.github.alphapaca.claudeclient.data.service.LLMService
+import com.github.alphapaca.claudeclient.data.service.OllamaService
 import com.github.alphapaca.claudeclient.domain.usecase.AddMcpServerUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.AutoConnectMCPServerUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.CallMCPToolUseCase
@@ -60,6 +62,7 @@ val appModule = module {
     // HTTP Clients
     single(named("claude")) { ClaudeApiClientFactory.create(get()) }
     single(named("deepseek")) { DeepSeekApiClientFactory.create(get()) }
+    single(named("ollama")) { OllamaApiClientFactory.create(get()) }
 
     // MCP Client
     single<MCPClientManager> { createMCPClientManager() }
@@ -70,7 +73,8 @@ val appModule = module {
     // LLM Services
     single<LLMService>(named("claude")) { ClaudeService(get(named("claude")), get(), get()) }
     single<LLMService>(named("deepseek")) { DeepSeekService(get(named("deepseek")), get()) }
-    single<List<LLMService>> { listOf(get(named("claude")), get(named("deepseek"))) }
+    single<LLMService>(named("ollama")) { OllamaService(get(named("ollama")), get()) }
+    single<List<LLMService>> { listOf(get(named("claude")), get(named("deepseek")), get(named("ollama"))) }
 
     // Parsers
     factory { ContentBlockParser(get()) }

@@ -28,6 +28,12 @@ enum class StopReason {
             "tool_calls" -> TOOL_USE
             else -> UNKNOWN
         }
+
+        fun fromOllamaReason(reason: String?): StopReason = when (reason) {
+            "stop" -> END_TURN
+            "length" -> MAX_TOKENS
+            else -> UNKNOWN
+        }
     }
 }
 

@@ -76,3 +76,34 @@ object DeepSeekApiClientFactory {
         }
     }
 }
+
+object OllamaApiClientFactory {
+    private const val DEFAULT_BASE_URL = "http://localhost:11434/"
+    private val CONTENT_TYPE_NDJSON = ContentType("application", "x-ndjson")
+
+    fun create(json: Json, baseUrl: String = DEFAULT_BASE_URL): HttpClient {
+        return HttpClient(OkHttp.create {
+            config {
+                callTimeout(300.seconds)
+                readTimeout(300.seconds)
+                writeTimeout(300.seconds)
+            }
+        }) {
+            install(ContentNegotiation) {
+                json(json)
+                // Ollama returns application/x-ndjson even with stream=false
+                json(json, CONTENT_TYPE_NDJSON)
+            }
+
+            install(Logging) {
+                logger = Logger.ANDROID
+                level = LogLevel.BODY
+            }
+
+            defaultRequest {
+                url(baseUrl)
+                contentType(ContentType.Application.Json)
+            }
+        }
+    }
+}
