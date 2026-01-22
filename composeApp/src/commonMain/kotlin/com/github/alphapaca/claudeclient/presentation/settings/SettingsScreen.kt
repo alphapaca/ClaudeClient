@@ -75,6 +75,8 @@ fun SettingsScreen(
     val temperature by viewModel.temperature.collectAsState()
     val maxTokens by viewModel.maxTokens.collectAsState()
     val selectedModel by viewModel.selectedModel.collectAsState()
+    val ollamaBaseUrl by viewModel.ollamaBaseUrl.collectAsState()
+    val ollamaTestState by viewModel.ollamaTestState.collectAsState()
     val hasChanges by viewModel.hasChanges.collectAsState()
 
     // MCP multi-server state
@@ -122,6 +124,10 @@ fun SettingsScreen(
                     onMaxTokensChange = viewModel::onMaxTokensChange,
                     selectedModel = selectedModel,
                     onModelChange = viewModel::onModelChange,
+                    ollamaBaseUrl = ollamaBaseUrl,
+                    onOllamaBaseUrlChange = viewModel::onOllamaBaseUrlChange,
+                    ollamaTestState = ollamaTestState,
+                    onTestOllamaConnection = viewModel::testOllamaConnection,
                     hasChanges = hasChanges,
                     onSave = viewModel::saveSettings,
                 )
@@ -161,6 +167,10 @@ private fun MainSettingsTab(
     onMaxTokensChange: (String) -> Unit,
     selectedModel: LLMModel,
     onModelChange: (LLMModel) -> Unit,
+    ollamaBaseUrl: String,
+    onOllamaBaseUrlChange: (String) -> Unit,
+    ollamaTestState: OllamaTestState,
+    onTestOllamaConnection: () -> Unit,
     hasChanges: Boolean,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
@@ -233,6 +243,56 @@ private fun MainSettingsTab(
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.padding(start = 8.dp),
                         )
+                    }
+                }
+            }
+            if (selectedModel == LLMModel.LLAMA_3_2) {
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = ollamaBaseUrl,
+                    onValueChange = onOllamaBaseUrlChange,
+                    label = { Text("Ollama Server URL") },
+                    placeholder = { Text("http://localhost:11434/") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = onTestOllamaConnection,
+                        enabled = ollamaTestState !is OllamaTestState.Testing,
+                    ) {
+                        if (ollamaTestState is OllamaTestState.Testing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Testing...")
+                        } else {
+                            Text("Test Connection")
+                        }
+                    }
+                    when (ollamaTestState) {
+                        is OllamaTestState.Success -> {
+                            Text(
+                                text = ollamaTestState.message,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        is OllamaTestState.Error -> {
+                            Text(
+                                text = ollamaTestState.message,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                        else -> {}
                     }
                 }
             }

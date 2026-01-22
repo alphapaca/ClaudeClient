@@ -131,7 +131,20 @@ class SettingsRepository(
         }
     }
 
+    suspend fun getOllamaBaseUrl(): String {
+        return dataStore.data.first().toPreferences()[ollamaBaseUrlKey] ?: DEFAULT_OLLAMA_BASE_URL
+    }
+
+    suspend fun setOllamaBaseUrl(url: String) {
+        dataStore.updateData {
+            it.toMutablePreferences().also { preferences ->
+                preferences[ollamaBaseUrlKey] = url
+            }
+        }
+    }
+
     private companion object {
+        const val DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434/"
         const val DEFAULT_MAX_TOKENS = 1024
         val systemPromptKey = stringPreferencesKey("system_prompt")
         val temperatureKey = doublePreferencesKey("temperature")
@@ -140,5 +153,6 @@ class SettingsRepository(
         val mcpServerCommandKey = stringPreferencesKey("mcp_server_command")
         val mcpServersKey = stringPreferencesKey("mcp_servers")
         val mcpServersInitializedKey = booleanPreferencesKey("mcp_servers_initialized")
+        val ollamaBaseUrlKey = stringPreferencesKey("ollama_base_url")
     }
 }

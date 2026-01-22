@@ -6,6 +6,7 @@ import com.github.alphapaca.claudeclient.data.api.ollama.OllamaChatResponse
 import com.github.alphapaca.claudeclient.data.api.ollama.OllamaMessage
 import com.github.alphapaca.claudeclient.data.api.ollama.OllamaOptions
 import com.github.alphapaca.claudeclient.data.mcp.MCPTool
+import com.github.alphapaca.claudeclient.data.repository.SettingsRepository
 import com.github.alphapaca.claudeclient.domain.model.ConversationItem
 import com.github.alphapaca.claudeclient.domain.model.LLMModel
 import com.github.alphapaca.claudeclient.domain.model.StopReason
@@ -18,6 +19,7 @@ import kotlinx.serialization.json.Json
 class OllamaService(
     private val client: HttpClient,
     private val json: Json,
+    private val settingsRepository: SettingsRepository,
 ) : LLMService {
 
     override fun isServiceFor(model: LLMModel): Boolean {
@@ -47,7 +49,8 @@ class OllamaService(
             ),
         )
 
-        val responseText = client.post("api/chat") {
+        val baseUrl = settingsRepository.getOllamaBaseUrl().trimEnd('/')
+        val responseText = client.post("$baseUrl/api/chat") {
             setBody(request)
         }.bodyAsText()
 

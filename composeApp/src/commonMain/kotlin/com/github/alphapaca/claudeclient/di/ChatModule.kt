@@ -31,6 +31,7 @@ import com.github.alphapaca.claudeclient.domain.usecase.GetMaxTokensUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetMcpServersUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetModelUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetMostRecentConversationIdUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.GetOllamaBaseUrlUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetSystemPromptUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetTemperatureFlowUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetTemperatureUseCase
@@ -41,7 +42,9 @@ import com.github.alphapaca.claudeclient.domain.usecase.ResetUnreadCountUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SendMessageUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetMaxTokensUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetModelUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.SetOllamaBaseUrlUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetSystemPromptUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.TestOllamaConnectionUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetTemperatureUseCase
 import com.github.alphapaca.claudeclient.presentation.chat.ChatViewModel
 import com.github.alphapaca.claudeclient.presentation.settings.SettingsViewModel
@@ -73,7 +76,7 @@ val appModule = module {
     // LLM Services
     single<LLMService>(named("claude")) { ClaudeService(get(named("claude")), get(), get()) }
     single<LLMService>(named("deepseek")) { DeepSeekService(get(named("deepseek")), get()) }
-    single<LLMService>(named("ollama")) { OllamaService(get(named("ollama")), get()) }
+    single<LLMService>(named("ollama")) { OllamaService(get(named("ollama")), get(), get()) }
     single<List<LLMService>> { listOf(get(named("claude")), get(named("deepseek")), get(named("ollama"))) }
 
     // Parsers
@@ -102,6 +105,9 @@ val appModule = module {
     factory { SetModelUseCase(get()) }
     factory { GetMaxTokensUseCase(get()) }
     factory { SetMaxTokensUseCase(get()) }
+    factory { GetOllamaBaseUrlUseCase(get()) }
+    factory { SetOllamaBaseUrlUseCase(get()) }
+    factory { TestOllamaConnectionUseCase(get(named("ollama"))) }
     factory { GetAllConversationsUseCase(get()) }
     factory { DeleteConversationUseCase(get()) }
     factory { GetMostRecentConversationIdUseCase(get()) }
@@ -121,7 +127,7 @@ val appModule = module {
     viewModel<SettingsViewModel> {
         SettingsViewModel(
             get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
-            get(), get(), get(), get(), get()
+            get(), get(), get(), get(), get(), get(), get(), get()
         )
     }
 }
