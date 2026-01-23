@@ -1,0 +1,13 @@
+task,category,model,quantization,temperature,max_tokens,num_ctx,time_s,tokens,tokens_per_s,score,score_pct,response_preview
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.3,64,2048,4.5,64,14.2,3/4,75.0,"```kotlin fun factorial(n: Int): Long {     if (n < 0) {         throw IllegalArgumentException(""Fac"
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.3,128,2048,10.06,78,7.8,4/4,100.0,"```kotlin fun factorial(n: Int): Long {     if (n < 0) {         throw IllegalArgumentException(""Fac"
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.3,256,2048,9.22,78,8.5,4/4,100.0,"```kotlin fun factorial(n: Int): Long {     if (n < 0) {         throw IllegalArgumentException(""Fac"
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.3,512,2048,5.12,48,9.4,4/4,100.0,```kotlin fun factorial(n: Int): Long {     return if (n == 0) {         1L     } else {         n.t
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.3,64,2048,8.04,64,8.0,0/2,0.0,**Bug Explanation**  The bug in this code is that it attempts to access an element at the index equa
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.3,128,2048,15.0,128,8.5,1/2,50.0,**Bug Explanation**  The bug in this code is that it attempts to access an index that does not exist
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.3,256,2048,28.35,256,9.0,2/2,100.0,**Bug Explanation**  The bug in the provided code is that it attempts to access an element at the in
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.3,512,2048,33.44,296,8.9,2/2,100.0,**Bug Explanation**  The bug in this code is that it attempts to access an element at the index equa
+explain_recursion,explanation,llama3.2:latest,Q4_K_M,0.3,64,2048,7.82,64,8.2,2/2,100.0,This code defines a recursive function called `mystery` that calculates the nth number in a sequence
+explain_recursion,explanation,llama3.2:latest,Q4_K_M,0.3,128,2048,10.42,86,8.3,2/2,100.0,"This code defines a recursive function named `mystery` that calculates the nth Fibonacci number, whe"
+explain_recursion,explanation,llama3.2:latest,Q4_K_M,0.3,256,2048,8.21,70,8.5,2/2,100.0,This code defines a recursive function called `mystery` that calculates the nth Fibonacci number. Th
+explain_recursion,explanation,llama3.2:latest,Q4_K_M,0.3,512,2048,10.35,91,8.8,2/2,100.0,This code defines a recursive function called `mystery` that calculates the nth Fibonacci number. Th

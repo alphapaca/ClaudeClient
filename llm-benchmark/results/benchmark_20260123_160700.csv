@@ -1,0 +1,85 @@
+task,category,model,quantization,temperature,max_tokens,num_ctx,time_s,tokens,tokens_per_s,score,score_pct,response_preview
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.0,128,1024,4.0,48,12.0,4/4,100.0,```kotlin fun factorial(n: Int): Long {     return if (n == 0) {         1L     } else {         n.t
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.0,128,2048,8.98,48,5.3,4/4,100.0,```kotlin fun factorial(n: Int): Long {     return if (n == 0) {         1L     } else {         n.t
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.0,256,1024,7.28,48,6.6,4/4,100.0,```kotlin fun factorial(n: Int): Long {     return if (n == 0) {         1L     } else {         n.t
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.0,256,2048,7.7,48,6.2,4/4,100.0,```kotlin fun factorial(n: Int): Long {     return if (n == 0) {         1L     } else {         n.t
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.1,128,1024,14.3,95,6.6,4/4,100.0,"```kotlin fun factorial(n: Int): Long {     if (n < 0) {         throw IllegalArgumentException(""Fac"
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.1,128,2048,8.25,48,5.8,4/4,100.0,```kotlin fun factorial(n: Int): Long {     return if (n == 0) {         1L     } else {         n.t
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.1,256,1024,15.06,95,6.3,4/4,100.0,"```kotlin fun factorial(n: Int): Long {     if (n < 0) {         throw IllegalArgumentException(""Fac"
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.1,256,2048,12.86,78,6.1,4/4,100.0,"```kotlin fun factorial(n: Int): Long {     if (n < 0) {         throw IllegalArgumentException(""Fac"
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.2,128,1024,13.08,78,6.0,4/4,100.0,"```kotlin fun factorial(n: Int): Long {     if (n < 0) {         throw IllegalArgumentException(""Fac"
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.2,128,2048,13.07,78,6.0,4/4,100.0,"```kotlin fun factorial(n: Int): Long {     if (n < 0) {         throw IllegalArgumentException(""Fac"
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.2,256,1024,13.14,78,5.9,4/4,100.0,"```kotlin fun factorial(n: Int): Long {     if (n < 0) {         throw IllegalArgumentException(""Fac"
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.2,256,2048,8.8,48,5.5,4/4,100.0,```kotlin fun factorial(n: Int): Long {     return if (n == 0) {         1L     } else {         n.t
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.3,128,1024,13.11,77,5.9,4/4,100.0,"```kotlin fun factorial(n: Int): Long {     if (n < 0) {         throw IllegalArgumentException(""Fac"
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.3,128,2048,15.62,94,6.0,4/4,100.0,"```kotlin fun factorial(n: Int): Long {     if (n < 0) {         throw IllegalArgumentException(""Fac"
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.3,256,1024,8.26,46,5.6,4/4,100.0,```kotlin fun factorial(n: Int): Long {     return if (n == 0L) {         1L     } else {         n 
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.3,256,2048,7.16,41,5.7,4/4,100.0,```kotlin fun factorial(n: Int): Long {     return if (n == 0 || n == 1) 1L else n * factorial(n - 1
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.5,128,1024,4.57,21,4.6,1/4,25.0,```kotlin fun factorial(n: Int): Long = n.toLong().factorial() ```
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.5,128,2048,12.04,70,5.8,1/4,25.0,```kotlin fun factorial(n: Int): Long = n.toLong().factorial() ```  This function uses Kotlin's `toL
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.5,256,1024,15.45,95,6.1,4/4,100.0,"```kotlin fun factorial(n: Int): Long {     if (n < 0) {         throw IllegalArgumentException(""Fac"
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.5,256,2048,8.02,45,5.6,3/4,75.0,```kotlin fun factorial(n: Int): Long {     var result = 1L     for (i in 2..n) {         result *= 
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.7,128,1024,8.72,50,5.7,4/4,100.0,```kotlin fun factorial(n: Int): Long {     if (n == 0 || n == 1) {         return 1L     }     retu
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.7,128,2048,12.8,77,6.0,4/4,100.0,"```kotlin fun factorial(n: Int): Long {     if (n < 0) {         throw IllegalArgumentException(""Fac"
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.7,256,1024,18.89,119,6.3,4/4,100.0,```kotlin /**  * Calculates the factorial of a given number.  *  * @param n The input number for whi
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.7,256,2048,13.45,82,6.1,3/4,75.0,```kotlin /**  * Calculates the factorial of a given number.  *  * @param n The number to calculate 
+complete_function,code_completion,llama3.2:latest,Q4_K_M,1.0,128,1024,17.16,108,6.3,4/4,100.0,```kotlin fun factorial(n: Int): Long {     return if (n == 0) 1 else n.toLong() * factorial(n - 1) 
+complete_function,code_completion,llama3.2:latest,Q4_K_M,1.0,128,2048,7.03,41,5.8,4/4,100.0,```kotlin fun factorial(n: Int): Long {     if (n <= 1) return 1L     return n.toLong() * factorial(
+complete_function,code_completion,llama3.2:latest,Q4_K_M,1.0,256,1024,13.17,79,6.0,3/4,75.0,```kotlin /**  * Calculates the factorial of a given integer.  *  * @param n The input number.  * @r
+complete_function,code_completion,llama3.2:latest,Q4_K_M,1.0,256,2048,5.64,33,5.9,2/4,50.0,"```kotlin fun factorial(n: Int): Long = (1..n).fold(1L) { a, i -> a * i } ```"
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.0,128,1024,20.68,128,6.2,2/2,100.0,**Bug Explanation**  The bug in this code is that it attempts to access an element at the index equa
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.0,128,2048,20.62,128,6.2,2/2,100.0,**Bug Explanation**  The bug in this code is that it attempts to access an element at the index equa
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.0,256,1024,35.02,221,6.3,2/2,100.0,**Bug Explanation**  The bug in this code is that it attempts to access an element at the index equa
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.0,256,2048,35.45,221,6.2,2/2,100.0,**Bug Explanation**  The bug in this code is that it attempts to access an element at the index equa
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.1,128,1024,21.59,128,5.9,2/2,100.0,**Bug Explanation**  The bug in this code is that it attempts to access an element at the index equa
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.1,128,2048,21.59,128,5.9,2/2,100.0,**Bug Explanation**  The bug in this code is that it attempts to access an element at the index equa
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.1,256,1024,39.68,246,6.2,2/2,100.0,**Bug Explanation**  The bug in this code is that it attempts to access an element at the index equa
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.1,256,2048,41.57,256,6.2,2/2,100.0,**Bug Explanation**  The bug in this code is that it attempts to access an index out of range in the
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.2,128,1024,21.28,128,6.0,0/2,0.0,**Bug Explanation**  The bug in this code is that it attempts to access an index outside the bounds 
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.2,128,2048,21.72,128,5.9,2/2,100.0,**Bug Explanation**  The bug in this code is that it attempts to access an element at the index equa
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.2,256,1024,61.05,226,3.7,2/2,100.0,**Bug Explanation**  The bug in this code is that it attempts to access an element at the index equa
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.2,256,2048,96.59,256,2.7,2/2,100.0,**Bug Explanation**  The bug in this code is that it attempts to access an index outside the bounds 
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.3,128,1024,45.2,128,2.8,0/2,0.0,**Bug Explanation**  The bug in the provided code is that it attempts to access an element at the in
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.3,128,2048,45.47,128,2.8,2/2,100.0,**Bug Explanation**  The bug in this code is that it attempts to access an element at the index equa
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.3,256,1024,86.42,256,3.0,2/2,100.0,**Bug Explanation**  The bug in this code is that it attempts to access the last element of an array
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.3,256,2048,90.48,256,2.8,2/2,100.0,**Bug Explanation**  The bug in this code is that it attempts to access the last element of an array
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.5,128,1024,46.66,128,2.7,1/2,50.0,### Bug Explanation  The bug in the provided code is an `IndexError`. This occurs when trying to acc
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.5,128,2048,56.04,128,2.3,0/2,0.0,**Bug Explanation**  The bug in this code is that it attempts to access the last element of an array
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.5,256,1024,86.32,249,2.9,2/2,100.0,**Bug Explanation**  The bug in the provided code is that it attempts to access the last element of 
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.5,256,2048,0.0,0,0,0/2,0.0,"ERROR: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=120)"
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.7,128,1024,72.4,128,1.8,0/2,0.0,**Bug Explanation**  The bug is an `IndexError` that occurs when trying to access the last element o
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.7,128,2048,0.0,0,0,0/2,0.0,"ERROR: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=120)"
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.7,256,1024,0.0,0,0,0/2,0.0,"ERROR: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=120)"
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.7,256,2048,0.0,0,0,0/2,0.0,"ERROR: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=120)"
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,1.0,128,1024,0.0,0,0,0/2,0.0,"ERROR: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=120)"
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,1.0,128,2048,0.0,0,0,0/2,0.0,"ERROR: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=120)"
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,1.0,256,1024,0.0,0,0,0/2,0.0,"ERROR: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=120)"
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,1.0,256,2048,0.0,0,0,0/2,0.0,"ERROR: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=120)"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.0,128,1024,42.43,21,0.5,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.0,128,2048,37.4,21,0.6,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.0,256,1024,25.92,21,0.8,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.0,256,2048,25.65,21,0.8,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.1,128,1024,85.1,21,0.2,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.1,128,2048,91.71,21,0.2,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.1,256,1024,67.64,21,0.3,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.1,256,2048,41.7,21,0.5,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.2,128,1024,39.36,21,0.5,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.2,128,2048,40.93,21,0.5,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.2,256,1024,40.64,21,0.5,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.2,256,2048,7.22,21,2.9,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.3,128,1024,7.45,21,2.8,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.3,128,2048,7.28,21,2.9,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.3,256,1024,7.09,21,3.0,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.3,256,2048,7.2,21,2.9,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.5,128,1024,7.05,21,3.0,6/6,100.0,"{""name"": ""John Smith"", ""age"": ""32"", ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.5,128,2048,6.83,21,3.1,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.5,256,1024,4.45,21,4.7,6/6,100.0,"{""name"": ""John Smith"", ""age"": ""32"", ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.5,256,2048,13.17,21,1.6,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.7,128,1024,9.4,19,2.0,6/6,100.0,"{""name"": ""John Smith"",""age"": 32,""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.7,128,2048,9.72,21,2.2,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.7,256,1024,10.06,21,2.1,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.7,256,2048,9.75,21,2.2,6/6,100.0,"{""name"": ""John Smith"", ""age"": ""32"", ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,1.0,128,1024,10.26,21,2.0,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,1.0,128,2048,9.69,21,2.2,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,1.0,256,1024,9.51,19,2.0,6/6,100.0,"{""name"": ""John Smith"",""age"": 32,""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,1.0,256,2048,10.38,21,2.0,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"

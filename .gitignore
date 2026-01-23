@@ -31,3 +31,9 @@ web-agent-backend/src/main/resources/web/*.LICENSE.txt
 
 # Kotlin JS store
 kotlin-js-store/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo

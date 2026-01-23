@@ -1,0 +1,19 @@
+task,category,model,quantization,temperature,max_tokens,num_ctx,time_s,tokens,tokens_per_s,score,score_pct,response_preview
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.0,256,2048,9.37,48,5.1,4/4,100.0,```kotlin fun factorial(n: Int): Long {     return if (n == 0) {         1L     } else {         n.t
+complete_function,code_completion,llama3.2:latest,Q4_K_M,0.7,256,2048,8.2,45,5.5,3/4,75.0,```kotlin fun factorial(n: Int): Long {     var result = 1L     for (i in 2..n) {         result *= 
+complete_list_filter,code_completion,llama3.2:latest,Q4_K_M,0.0,256,2048,7.06,45,6.4,5/5,100.0,"```python def filter_even_numbers(numbers: list[int]) -> list[int]:     """"""Return only even numbers "
+complete_list_filter,code_completion,llama3.2:latest,Q4_K_M,0.7,256,2048,6.32,45,7.1,5/5,100.0,"```python def filter_even_numbers(numbers: list[int]) -> list[int]:     """"""Return only even numbers "
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.0,256,2048,33.79,221,6.5,2/2,100.0,**Bug Explanation**  The bug in this code is that it attempts to access an element at the index equa
+fix_off_by_one,code_fix,llama3.2:latest,Q4_K_M,0.7,256,2048,39.63,256,6.5,2/2,100.0,**Bug Explanation**  The bug is caused by attempting to access an element at the end of a list using
+fix_null_check,code_fix,llama3.2:latest,Q4_K_M,0.0,256,2048,20.39,127,6.2,2/4,50.0,"The issue with your code is that you're trying to call `uppercase()` on a null object, which results"
+fix_null_check,code_fix,llama3.2:latest,Q4_K_M,0.7,256,2048,39.27,256,6.5,3/4,75.0,"The `NullPointerException` will occur when you call `getUserName()` on a null object, because `null."
+explain_recursion,explanation,llama3.2:latest,Q4_K_M,0.0,256,2048,12.55,77,6.1,2/2,100.0,"This code defines a recursive function called `mystery` that calculates the nth Fibonacci number, wh"
+explain_recursion,explanation,llama3.2:latest,Q4_K_M,0.7,256,2048,10.35,68,6.6,2/2,100.0,This code defines a recursive function called `mystery` that calculates the nth number in the Fibona
+math_word_problem,reasoning,llama3.2:latest,Q4_K_M,0.0,256,2048,21.26,135,6.4,3/4,75.0,"To calculate the cost of 7 apples, we need to first determine if you qualify for the discount.  Sinc"
+math_word_problem,reasoning,llama3.2:latest,Q4_K_M,0.7,256,2048,33.66,220,6.5,3/4,75.0,"To calculate the cost of 7 apples, we'll follow these steps:  1. First, let's find the original pric"
+logic_puzzle,reasoning,llama3.2:latest,Q4_K_M,0.0,256,2048,6.25,37,5.9,3/3,100.0,"Yes, because if all Bloops are Razzies and all Razzies are Lazzies, then it logically follows that a"
+logic_puzzle,reasoning,llama3.2:latest,Q4_K_M,0.7,256,2048,5.86,38,6.5,3/3,100.0,"Yes, because if all Bloops are Razzies and all Razzies are Lazzies, then by transitive property, all"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.0,256,2048,3.96,21,5.3,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+json_extraction,structured,llama3.2:latest,Q4_K_M,0.7,256,2048,3.08,21,6.8,6/6,100.0,"{""name"": ""John Smith"", ""age"": 32, ""city"": ""Tokyo""}"
+summarize_code,context,llama3.2:latest,Q4_K_M,0.0,256,2048,9.78,43,4.4,3/4,75.0,This Kotlin code defines a `ConversationRepository` class that acts as an abstraction layer for inte
+summarize_code,context,llama3.2:latest,Q4_K_M,0.7,256,2048,7.49,49,6.5,2/4,50.0,"This Kotlin code defines a `ConversationRepository` class that acts as an abstraction layer, providi"

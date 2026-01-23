@@ -1,0 +1,19 @@
+task,category,model,quantization,temperature,max_tokens,num_ctx,time_s,tokens,tokens_per_s,score,score_pct,response_preview
+complete_function,code_completion,mistral:latest,Q4_K_M,0.0,256,2048,67.44,129,1.9,4/4,100.0, Here's a simple implementation of the factorial function in Kotlin using recursion:  ```kotlin fun 
+complete_function,code_completion,mistral:latest,Q4_K_M,0.7,256,2048,58.15,153,2.6,4/4,100.0, Here's the completed function for calculating the factorial in Kotlin using recursion:  ```kotlin f
+complete_list_filter,code_completion,mistral:latest,Q4_K_M,0.0,256,2048,41.68,126,3.0,5/5,100.0, Here is the completed function that returns only even numbers from the given list:  ```python def f
+complete_list_filter,code_completion,mistral:latest,Q4_K_M,0.7,256,2048,33.79,107,3.2,5/5,100.0," Sure, here is the completed function that filters out even numbers from a given list:  ```python de"
+fix_off_by_one,code_fix,mistral:latest,Q4_K_M,0.0,256,2048,49.46,158,3.2,1/2,50.0," The bug in your code is that you are trying to access an element at the index `len(arr)`, which doe"
+fix_off_by_one,code_fix,mistral:latest,Q4_K_M,0.7,256,2048,57.45,204,3.6,1/2,50.0," The bug in your code is that you are trying to access an element at the index `len(arr)`, which doe"
+fix_null_check,code_fix,mistral:latest,Q4_K_M,0.0,256,2048,36.44,130,3.6,3/4,75.0," To fix the NullPointerException, you should check if the `user` object is not null before accessing"
+fix_null_check,code_fix,mistral:latest,Q4_K_M,0.7,256,2048,48.08,174,3.6,3/4,75.0, The `NullPointerException` in your provided Kotlin code occurs because you are trying to access the
+explain_recursion,explanation,mistral:latest,Q4_K_M,0.0,256,2048,28.52,99,3.5,2/2,100.0," This Python function, named `mystery`, is a recursive implementation of the Fibonacci sequence. It "
+explain_recursion,explanation,mistral:latest,Q4_K_M,0.7,256,2048,33.39,128,3.8,2/2,100.0," This Python function, named `mystery`, calculates the Fibonacci sequence up to the provided integer"
+math_word_problem,reasoning,mistral:latest,Q4_K_M,0.0,256,2048,54.25,215,4.0,3/4,75.0," First, let's calculate the cost of buying 7 apples without any discount:  Cost without discount = P"
+math_word_problem,reasoning,mistral:latest,Q4_K_M,0.7,256,2048,64.26,256,4.0,2/4,50.0," First, let's find out the cost of each apple without any discount:  Cost per apple = $2  Now, if yo"
+logic_puzzle,reasoning,mistral:latest,Q4_K_M,0.0,256,2048,9.85,36,3.7,3/3,100.0," Yes, because if all Bloops are Razzies and all Razzies are Lazzies, then by transitive property, al"
+logic_puzzle,reasoning,mistral:latest,Q4_K_M,0.7,256,2048,9.37,36,3.8,3/3,100.0," Yes, because if all Bloops are Razzies and all Razzies are Lazzies, then by transitive property, al"
+json_extraction,structured,mistral:latest,Q4_K_M,0.0,256,2048,8.82,31,3.5,6/6,100.0," {   ""name"": ""John Smith"",   ""age"": 32,   ""city"": ""Tokyo"" }"
+json_extraction,structured,mistral:latest,Q4_K_M,0.7,256,2048,8.91,31,3.5,6/6,100.0," {   ""name"": ""John Smith"",   ""age"": 32,   ""city"": ""Tokyo"" }"
+summarize_code,context,mistral:latest,Q4_K_M,0.0,256,2048,24.34,59,2.4,3/4,75.0," This Kotlin code defines a `ConversationRepository` class that manages conversations, providing met"
+summarize_code,context,mistral:latest,Q4_K_M,0.7,256,2048,21.77,82,3.8,3/4,75.0, This Kotlin code defines a `ConversationRepository` class that manages conversations and their rela

@@ -1,0 +1,9 @@
+task,category,model,quantization,temperature,max_tokens,num_ctx,time_s,tokens,tokens_per_s,score,score_pct,response_preview
+explain_recursion,explanation,llama3.2:latest,Q4_K_M,0.3,256,512,0.0,0,0,0/2,0.0,"ERROR: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=120)"
+explain_recursion,explanation,llama3.2:latest,Q4_K_M,0.3,256,1024,96.99,80,0.8,2/2,100.0,This code defines a recursive function named `mystery` that calculates the nth number in a sequence 
+explain_recursion,explanation,llama3.2:latest,Q4_K_M,0.3,256,2048,0.0,0,0,0/2,0.0,"ERROR: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=120)"
+explain_recursion,explanation,llama3.2:latest,Q4_K_M,0.3,256,4096,0.0,0,0,0/2,0.0,"ERROR: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=120)"
+summarize_code,context,llama3.2:latest,Q4_K_M,0.3,256,512,114.81,43,0.4,3/4,75.0,This Kotlin code defines a `ConversationRepository` class that acts as an interface between local da
+summarize_code,context,llama3.2:latest,Q4_K_M,0.3,256,1024,118.65,46,0.4,3/4,75.0,This Kotlin code defines a `ConversationRepository` class that acts as an abstraction layer for inte
+summarize_code,context,llama3.2:latest,Q4_K_M,0.3,256,2048,95.65,46,0.5,3/4,75.0,This Kotlin code defines a `ConversationRepository` class that acts as an abstraction layer for inte
+summarize_code,context,llama3.2:latest,Q4_K_M,0.3,256,4096,0.0,0,0,0/4,0.0,"ERROR: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=120)"
