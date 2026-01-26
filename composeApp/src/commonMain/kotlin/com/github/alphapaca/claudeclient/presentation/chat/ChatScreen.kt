@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
@@ -66,6 +67,7 @@ fun ChatScreen(
     modifier: Modifier = Modifier,
     onSettingsClick: () -> Unit = {},
     onCodeSessionClick: () -> Unit = {},
+    onSystemAnalysisClick: () -> Unit = {},
 ) {
     val viewModel = koinViewModel<ChatViewModel>()
     val chatItems by viewModel.chatItems.collectAsState(emptyList())
@@ -98,6 +100,10 @@ fun ChatScreen(
                 onCodeSessionClick = {
                     scope.launch { drawerState.close() }
                     onCodeSessionClick()
+                },
+                onSystemAnalysisClick = {
+                    scope.launch { drawerState.close() }
+                    onSystemAnalysisClick()
                 },
             )
         },
@@ -132,6 +138,7 @@ private fun ConversationDrawerContent(
     onNewConversation: () -> Unit,
     onConversationSelected: (String) -> Unit,
     onCodeSessionClick: () -> Unit = {},
+    onSystemAnalysisClick: () -> Unit = {},
 ) {
     ModalDrawerSheet {
         Text(
@@ -153,6 +160,14 @@ private fun ConversationDrawerContent(
             label = { Text("Code sessions") },
             selected = false,
             onClick = onCodeSessionClick,
+            modifier = Modifier.padding(horizontal = 12.dp)
+        )
+
+        NavigationDrawerItem(
+            icon = { Icon(Icons.Default.QueryStats, contentDescription = null) },
+            label = { Text("System analysis") },
+            selected = false,
+            onClick = onSystemAnalysisClick,
             modifier = Modifier.padding(horizontal = 12.dp)
         )
 

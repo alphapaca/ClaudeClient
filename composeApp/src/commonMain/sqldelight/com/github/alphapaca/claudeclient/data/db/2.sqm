@@ -1,0 +1,26 @@
+-- Migration to add System Analysis tables
+
+CREATE TABLE IF NOT EXISTS SystemAnalysisSession (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    project_name TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS SystemAnalysisMessage (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL REFERENCES SystemAnalysisSession(id) ON DELETE CASCADE,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    model TEXT,
+    input_tokens INTEGER,
+    output_tokens INTEGER,
+    inference_time_ms INTEGER,
+    stop_reason TEXT,
+    tool_name TEXT,
+    created_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS system_analysis_message_session_id ON SystemAnalysisMessage(session_id);
+CREATE INDEX IF NOT EXISTS system_analysis_message_created_at ON SystemAnalysisMessage(created_at);

@@ -19,7 +19,9 @@ import com.github.alphapaca.claudeclient.presentation.codesession.CodeSessionScr
 import com.github.alphapaca.claudeclient.presentation.navigation.ChatKey
 import com.github.alphapaca.claudeclient.presentation.navigation.CodeSessionKey
 import com.github.alphapaca.claudeclient.presentation.navigation.SettingsKey
+import com.github.alphapaca.claudeclient.presentation.navigation.SystemAnalysisKey
 import com.github.alphapaca.claudeclient.presentation.settings.SettingsScreen
+import com.github.alphapaca.claudeclient.presentation.systemanalysis.SystemAnalysisScreenWrapper
 import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
 import org.koin.core.module.Module
@@ -59,6 +61,7 @@ fun App(platformModule: Module) {
                             modifier = Modifier.Companion.padding(innerPadding),
                             onSettingsClick = { backStack.add(SettingsKey) },
                             onCodeSessionClick = { backStack.add(CodeSessionKey) },
+                            onSystemAnalysisClick = { backStack.add(SystemAnalysisKey) },
                         )
                     }
                     entry<SettingsKey> {
@@ -69,6 +72,12 @@ fun App(platformModule: Module) {
                     }
                     entry<CodeSessionKey> {
                         CodeSessionScreenWrapper(
+                            modifier = Modifier.Companion.padding(innerPadding),
+                            onBackClick = { backStack.removeLastOrNull() },
+                        )
+                    }
+                    entry<SystemAnalysisKey> {
+                        SystemAnalysisScreenWrapper(
                             modifier = Modifier.Companion.padding(innerPadding),
                             onBackClick = { backStack.removeLastOrNull() },
                         )

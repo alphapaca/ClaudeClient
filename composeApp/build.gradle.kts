@@ -153,6 +153,8 @@ sqldelight {
     databases {
         create("ClaudeClientDatabase") {
             packageName.set("com.github.alphapaca.claudeclient.data.db")
+            schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
+            verifyMigrations.set(true)
         }
     }
 }

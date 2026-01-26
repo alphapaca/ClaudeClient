@@ -1,0 +1,67 @@
+-- System Analysis Session table for system/data analysis with local LLM
+CREATE TABLE SystemAnalysisSession (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    project_name TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+-- Messages within a system analysis session
+CREATE TABLE SystemAnalysisMessage (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL REFERENCES SystemAnalysisSession(id) ON DELETE CASCADE,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    model TEXT,
+    input_tokens INTEGER,
+    output_tokens INTEGER,
+    inference_time_ms INTEGER,
+    stop_reason TEXT,
+    tool_name TEXT,
+    created_at INTEGER NOT NULL
+);
+
+CREATE INDEX system_analysis_message_session_id ON SystemAnalysisMessage(session_id);
+CREATE INDEX system_analysis_message_created_at ON SystemAnalysisMessage(created_at);
+
+-- Queries for SystemAnalysisSession
+
+selectAllSessions:
+SELECT id, name, project_name, updated_at
+FROM SystemAnalysisSession
+ORDER BY updated_at DESC;
+
+selectSessionById:
+SELECT *
+FROM SystemAnalysisSession
+WHERE id = ?;
+
+insertSession:
+INSERT INTO SystemAnalysisSession(id, name, project_name, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?);
+
+updateSessionTimestamp:
+UPDATE SystemAnalysisSession
+SET updated_at = ?
+WHERE id = ?;
+
+deleteSessionById:
+DELETE FROM SystemAnalysisSession
+WHERE id = ?;
+
+-- Queries for SystemAnalysisMessage
+
+selectMessagesBySessionId:
+SELECT *
+FROM SystemAnalysisMessage
+WHERE session_id = ?
+ORDER BY created_at ASC;
+
+insertMessage:
+INSERT INTO SystemAnalysisMessage(id, session_id, role, content, model, input_tokens, output_tokens, inference_time_ms, stop_reason, tool_name, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteMessagesBySessionId:
+DELETE FROM SystemAnalysisMessage
+WHERE session_id = ?;
