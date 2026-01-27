@@ -26,6 +26,7 @@ import com.github.alphapaca.claudeclient.domain.usecase.DisconnectMCPServerUseCa
 import com.github.alphapaca.claudeclient.domain.usecase.GetABikeUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetAllConversationsUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetConversationUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.GetDeveloperProfileUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetMCPToolsUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetMaxTokensUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetMcpServersUseCase
@@ -39,6 +40,7 @@ import com.github.alphapaca.claudeclient.domain.usecase.GetWeatherUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.ObserveReminderNotificationsUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.RemoveMcpServerUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.ResetUnreadCountUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.SetDeveloperProfileUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SendMessageUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetMaxTokensUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetModelUseCase
@@ -91,7 +93,7 @@ val appModule = module {
 
     // Use Cases
     factory { GetWeatherUseCase(get()) }
-    factory { SendMessageUseCase(get(), get(), get()) }
+    factory { SendMessageUseCase(get(), get(), get(), get()) }
     factory { GetConversationUseCase(get()) }
     factory { ClearConversationUseCase(get()) }
     factory { CompactConversationUseCase(get(), get()) }
@@ -121,13 +123,15 @@ val appModule = module {
     factory { AutoConnectMCPServerUseCase(get(), get()) }
     factory { ResetUnreadCountUseCase(get()) }
     factory { ObserveReminderNotificationsUseCase(get(), get()) }
+    factory { GetDeveloperProfileUseCase(get()) }
+    factory { SetDeveloperProfileUseCase(get()) }
 
     // ViewModels
     viewModel<ChatViewModel> { ChatViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel<SettingsViewModel> {
         SettingsViewModel(
             get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
-            get(), get(), get(), get(), get(), get(), get(), get()
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get()
         )
     }
 }

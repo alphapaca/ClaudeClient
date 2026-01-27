@@ -143,6 +143,18 @@ class SettingsRepository(
         }
     }
 
+    suspend fun getDeveloperProfile(): String {
+        return dataStore.data.first().toPreferences()[developerProfileKey].orEmpty()
+    }
+
+    suspend fun setDeveloperProfile(profile: String) {
+        dataStore.updateData {
+            it.toMutablePreferences().also { preferences ->
+                preferences[developerProfileKey] = profile
+            }
+        }
+    }
+
     private companion object {
         const val DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434/"
         const val DEFAULT_MAX_TOKENS = 1024
@@ -154,5 +166,6 @@ class SettingsRepository(
         val mcpServersKey = stringPreferencesKey("mcp_servers")
         val mcpServersInitializedKey = booleanPreferencesKey("mcp_servers_initialized")
         val ollamaBaseUrlKey = stringPreferencesKey("ollama_base_url")
+        val developerProfileKey = stringPreferencesKey("developer_profile")
     }
 }

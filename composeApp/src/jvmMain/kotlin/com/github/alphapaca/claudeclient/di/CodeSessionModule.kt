@@ -42,10 +42,10 @@ private fun getVoyageAIApiKey(): String? {
  * DI module for code session feature (JVM only).
  */
 val codeSessionModule = module {
-    // VoyageAI Service - reads API key from environment or local.properties
-    // Returns null if not configured, so the app doesn't crash
-    single<VoyageAIService?> {
-        getVoyageAIApiKey()?.let { VoyageAIService(it) }
+    // VoyageAI Service - only register if API key is available
+    // Koin's single<T?> doesn't handle null values well, so we conditionally register
+    getVoyageAIApiKey()?.let { apiKey ->
+        single { VoyageAIService(apiKey) }
     }
 
     // Code Session Service
@@ -54,7 +54,7 @@ val codeSessionModule = module {
     // Local Data Source
     single { CodeSessionLocalDataSource(get()) }
 
-    // Repository - pass nullable VoyageAIService
+    // Repository - pass nullable VoyageAIService (will be null if not registered above)
     single { CodeSessionRepository(get(), getOrNull<VoyageAIService>(), get(), get()) }
 
     // Use Cases - pass nullable VoyageAIService

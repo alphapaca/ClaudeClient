@@ -72,6 +72,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val systemPrompt by viewModel.systemPrompt.collectAsState()
+    val developerProfile by viewModel.developerProfile.collectAsState()
     val temperature by viewModel.temperature.collectAsState()
     val maxTokens by viewModel.maxTokens.collectAsState()
     val selectedModel by viewModel.selectedModel.collectAsState()
@@ -118,6 +119,8 @@ fun SettingsScreen(
                 0 -> MainSettingsTab(
                     systemPrompt = systemPrompt,
                     onSystemPromptChange = viewModel::onSystemPromptChange,
+                    developerProfile = developerProfile,
+                    onDeveloperProfileChange = viewModel::onDeveloperProfileChange,
                     temperature = temperature,
                     onTemperatureChange = viewModel::onTemperatureChange,
                     maxTokens = maxTokens,
@@ -161,6 +164,8 @@ fun SettingsScreen(
 private fun MainSettingsTab(
     systemPrompt: String,
     onSystemPromptChange: (String) -> Unit,
+    developerProfile: String,
+    onDeveloperProfileChange: (String) -> Unit,
     temperature: String,
     onTemperatureChange: (String) -> Unit,
     maxTokens: String,
@@ -199,6 +204,15 @@ private fun MainSettingsTab(
                 value = systemPrompt,
                 onValueChange = onSystemPromptChange,
                 label = { Text("System Prompt") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 4,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedTextField(
+                value = developerProfile,
+                onValueChange = onDeveloperProfileChange,
+                label = { Text("Developer Profile") },
+                placeholder = { Text("Describe your preferred technologies, frameworks, and coding style...") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 4,
             )

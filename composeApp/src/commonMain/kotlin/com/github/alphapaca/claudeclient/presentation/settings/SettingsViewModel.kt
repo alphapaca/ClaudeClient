@@ -10,6 +10,7 @@ import com.github.alphapaca.claudeclient.domain.model.LLMModel
 import com.github.alphapaca.claudeclient.domain.usecase.AddMcpServerUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.ConnectMCPServerUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.DisconnectMCPServerUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.GetDeveloperProfileUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetMCPToolsUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetMaxTokensUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetMcpServersUseCase
@@ -18,6 +19,7 @@ import com.github.alphapaca.claudeclient.domain.usecase.GetOllamaBaseUrlUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetSystemPromptUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.GetTemperatureUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.RemoveMcpServerUseCase
+import com.github.alphapaca.claudeclient.domain.usecase.SetDeveloperProfileUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetMaxTokensUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetModelUseCase
 import com.github.alphapaca.claudeclient.domain.usecase.SetOllamaBaseUrlUseCase
@@ -51,6 +53,8 @@ class SettingsViewModel(
     private val disconnectMCPServerUseCase: DisconnectMCPServerUseCase,
     private val getMCPToolsUseCase: GetMCPToolsUseCase,
     private val mcpClientManager: MCPClientManager,
+    private val getDeveloperProfileUseCase: GetDeveloperProfileUseCase,
+    private val setDeveloperProfileUseCase: SetDeveloperProfileUseCase,
 ) : ViewModel() {
 
     // Main settings state
@@ -68,6 +72,9 @@ class SettingsViewModel(
 
     private val _ollamaBaseUrl = MutableStateFlow("")
     val ollamaBaseUrl: StateFlow<String> = _ollamaBaseUrl
+
+    private val _developerProfile = MutableStateFlow("")
+    val developerProfile: StateFlow<String> = _developerProfile
 
     // Ollama connection test state
     private val _ollamaTestState = MutableStateFlow<OllamaTestState>(OllamaTestState.Idle)
@@ -98,6 +105,7 @@ class SettingsViewModel(
     private val _initialMaxTokens = MutableStateFlow<String?>(null)
     private val _initialSelectedModel = MutableStateFlow<LLMModel?>(null)
     private val _initialOllamaBaseUrl = MutableStateFlow<String?>(null)
+    private val _initialDeveloperProfile = MutableStateFlow<String?>(null)
 
     private data class SettingsState(
         val systemPrompt: String,
@@ -105,21 +113,24 @@ class SettingsViewModel(
         val maxTokens: String,
         val model: LLMModel,
         val ollamaBaseUrl: String,
+        val developerProfile: String,
     )
 
     private val _currentSettings = combine(
-        _systemPrompt, _temperature, _maxTokens, _selectedModel, _ollamaBaseUrl
-    ) { systemPrompt, temperature, maxTokens, model, ollamaBaseUrl ->
-        SettingsState(systemPrompt, temperature, maxTokens, model, ollamaBaseUrl)
+        combine(_systemPrompt, _temperature, _maxTokens) { a, b, c -> Triple(a, b, c) },
+        combine(_selectedModel, _ollamaBaseUrl, _developerProfile) { a, b, c -> Triple(a, b, c) }
+    ) { (systemPrompt, temperature, maxTokens), (model, ollamaBaseUrl, developerProfile) ->
+        SettingsState(systemPrompt, temperature, maxTokens, model, ollamaBaseUrl, developerProfile)
     }
 
     private val _initialSettings = combine(
-        _initialSystemPrompt, _initialTemperature, _initialMaxTokens, _initialSelectedModel, _initialOllamaBaseUrl
-    ) { systemPrompt, temperature, maxTokens, model, ollamaBaseUrl ->
-        if (systemPrompt == null || temperature == null || maxTokens == null || model == null || ollamaBaseUrl == null) {
+        combine(_initialSystemPrompt, _initialTemperature, _initialMaxTokens) { a, b, c -> Triple(a, b, c) },
+        combine(_initialSelectedModel, _initialOllamaBaseUrl, _initialDeveloperProfile) { a, b, c -> Triple(a, b, c) }
+    ) { (systemPrompt, temperature, maxTokens), (model, ollamaBaseUrl, developerProfile) ->
+        if (systemPrompt == null || temperature == null || maxTokens == null || model == null || ollamaBaseUrl == null || developerProfile == null) {
             null
         } else {
-            SettingsState(systemPrompt, temperature, maxTokens, model, ollamaBaseUrl)
+            SettingsState(systemPrompt, temperature, maxTokens, model, ollamaBaseUrl, developerProfile)
         }
     }
 
@@ -139,6 +150,7 @@ class SettingsViewModel(
             _maxTokens.value = getMaxTokensUseCase().toString()
             _selectedModel.value = getModelUseCase()
             _ollamaBaseUrl.value = getOllamaBaseUrlUseCase()
+            _developerProfile.value = getDeveloperProfileUseCase()
 
             // Store initial values for change detection
             _initialSystemPrompt.value = _systemPrompt.value
@@ -146,6 +158,7 @@ class SettingsViewModel(
             _initialMaxTokens.value = _maxTokens.value
             _initialSelectedModel.value = _selectedModel.value
             _initialOllamaBaseUrl.value = _ollamaBaseUrl.value
+            _initialDeveloperProfile.value = _developerProfile.value
         }
     }
 
@@ -168,6 +181,10 @@ class SettingsViewModel(
     fun onOllamaBaseUrlChange(url: String) {
         _ollamaBaseUrl.value = url
         _ollamaTestState.value = OllamaTestState.Idle
+    }
+
+    fun onDeveloperProfileChange(profile: String) {
+        _developerProfile.value = profile
     }
 
     fun testOllamaConnection() {
@@ -252,6 +269,7 @@ class SettingsViewModel(
             setMaxTokensUseCase(_maxTokens.value.toIntOrNull()?.coerceIn(1, 8192) ?: 1024)
             setModelUseCase(_selectedModel.value)
             setOllamaBaseUrlUseCase(_ollamaBaseUrl.value.ifBlank { "http://localhost:11434/" })
+            setDeveloperProfileUseCase(_developerProfile.value)
             _temperature.value = getTemperatureUseCase()?.toString().orEmpty()
             _maxTokens.value = getMaxTokensUseCase().toString()
 
@@ -261,6 +279,7 @@ class SettingsViewModel(
             _initialMaxTokens.value = _maxTokens.value
             _initialSelectedModel.value = _selectedModel.value
             _initialOllamaBaseUrl.value = _ollamaBaseUrl.value
+            _initialDeveloperProfile.value = _developerProfile.value
         }
     }
 
