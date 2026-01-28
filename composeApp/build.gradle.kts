@@ -90,6 +90,8 @@ kotlin {
             // For code session indexer
             implementation(libs.sqlite.jdbc)
             implementation(libs.ktor.client.cio)
+            // For voice input (speech-to-text)
+            implementation(libs.vosk)
         }
     }
 }

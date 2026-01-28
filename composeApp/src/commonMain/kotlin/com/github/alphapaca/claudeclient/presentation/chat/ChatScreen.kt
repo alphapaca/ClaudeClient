@@ -18,8 +18,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -57,8 +59,11 @@ import com.github.alphapaca.claudeclient.domain.model.ConversationItem
 import com.github.alphapaca.claudeclient.domain.model.StopReason
 import com.github.alphapaca.claudeclient.presentation.widgets.BikeRecommendationCard
 import com.github.alphapaca.claudeclient.presentation.widgets.FancyWeatherWidget
+import com.github.alphapaca.claudeclient.data.speech.SpeechState
+import com.github.alphapaca.claudeclient.data.speech.SpeechToTextService
 import com.mikepenz.markdown.m3.Markdown
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,6 +75,7 @@ fun ChatScreen(
     onSystemAnalysisClick: () -> Unit = {},
 ) {
     val viewModel = koinViewModel<ChatViewModel>()
+    val speechService = koinInject<SpeechToTextService>()
     val chatItems by viewModel.chatItems.collectAsState(emptyList())
     val tokensUsed by viewModel.tokensUsed.collectAsState(0)
     val totalCost by viewModel.totalCost.collectAsState(0.0)
@@ -78,10 +84,21 @@ fun ChatScreen(
     val error by viewModel.error.collectAsState()
     val conversations by viewModel.conversations.collectAsState(emptyList())
     val currentConversationId by viewModel.currentConversationId.collectAsState()
+    val speechState by speechService.state.collectAsState()
 
     var inputText by remember { mutableStateOf("") }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
+    // Handle speech recognition results
+    androidx.compose.runtime.LaunchedEffect(speechState) {
+        when (val state = speechState) {
+            is SpeechState.Result -> {
+                inputText = state.text
+            }
+            else -> {}
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -127,6 +144,19 @@ fun ChatScreen(
             onDeleteClick = viewModel::deleteCurrentConversation,
             onSettingsClick = onSettingsClick,
             onMenuClick = { scope.launch { drawerState.open() } },
+            speechState = speechState,
+            onMicClick = {
+                scope.launch {
+                    when (speechState) {
+                        is SpeechState.Listening, is SpeechState.Processing -> {
+                            speechService.stopListening()
+                        }
+                        else -> {
+                            speechService.startListening()
+                        }
+                    }
+                }
+            },
         )
     }
 }
@@ -215,6 +245,8 @@ private fun ChatScreenContent(
     onDeleteClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onMenuClick: () -> Unit,
+    speechState: SpeechState = SpeechState.Idle,
+    onMicClick: () -> Unit = {},
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         TopAppBar(
@@ -286,6 +318,35 @@ private fun ChatScreenContent(
             )
         }
 
+        // Speech recognition status
+        val speechStatusText = when (speechState) {
+            is SpeechState.Listening -> "Listening..."
+            is SpeechState.Processing -> {
+                val partial = (speechState as SpeechState.Processing).partialText
+                when {
+                    partial.isEmpty() -> "Processing..."
+                    // Status messages (downloading, loading, etc.) - show as-is
+                    partial.contains("...") -> partial
+                    // Actual speech being recognized
+                    else -> "Hearing: $partial"
+                }
+            }
+            is SpeechState.Error -> "Error: ${(speechState as SpeechState.Error).message}"
+            else -> null
+        }
+        speechStatusText?.let { status ->
+            Text(
+                text = status,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (speechState is SpeechState.Error) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+        }
+
         // Input
         Row(
             modifier = Modifier
@@ -306,6 +367,25 @@ private fun ChatScreenContent(
                     },
                 placeholder = { Text("Type a message...") }
             )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Mic button for voice input
+            val isRecording = speechState is SpeechState.Listening || speechState is SpeechState.Processing
+            IconButton(
+                onClick = onMicClick,
+                enabled = !isLoading
+            ) {
+                Icon(
+                    imageVector = if (isRecording) Icons.Default.Stop else Icons.Default.Mic,
+                    contentDescription = if (isRecording) "Stop recording" else "Start voice input",
+                    tint = if (isRecording) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    }
+                )
+            }
 
             Spacer(modifier = Modifier.width(8.dp))
 

@@ -1,5 +1,6 @@
 package com.github.alphapaca.claudeclient
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,6 +16,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             ClaudeClientTheme {
                 App(module {
+                    single<Context> { this@MainActivity.applicationContext }
                     single { createDataStore(this@MainActivity) }
                     single { createDatabaseDriver(this@MainActivity) }
                     single { ClaudeClientDatabase(get()) }

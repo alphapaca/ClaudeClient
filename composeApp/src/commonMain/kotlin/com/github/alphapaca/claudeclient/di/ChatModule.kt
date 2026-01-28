@@ -8,6 +8,8 @@ import com.github.alphapaca.claudeclient.data.mcp.MCPClientManager
 import com.github.alphapaca.claudeclient.data.mcp.createMCPClientManager
 import com.github.alphapaca.claudeclient.data.notification.NotificationService
 import com.github.alphapaca.claudeclient.data.notification.createNotificationService
+import com.github.alphapaca.claudeclient.data.speech.SpeechToTextService
+import com.github.alphapaca.claudeclient.data.speech.createSpeechToTextService
 import com.github.alphapaca.claudeclient.data.parser.ContentBlockParser
 import com.github.alphapaca.claudeclient.data.repository.ConversationRepository
 import com.github.alphapaca.claudeclient.data.repository.SettingsRepository
@@ -74,6 +76,9 @@ val appModule = module {
 
     // Notification Service
     single<NotificationService> { createNotificationService() }
+
+    // Speech-to-text Service
+    single<SpeechToTextService> { createSpeechToTextService() }
 
     // LLM Services
     single<LLMService>(named("claude")) { ClaudeService(get(named("claude")), get(), get()) }
